@@ -55,7 +55,6 @@ import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
-import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
@@ -115,7 +114,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	/**
 	 * @return <code>true</code> if this connection will fail to commit when the
-	 *         observed state is outdated.
+	 *         observed state has changed.
 	 */
 	public boolean isSerializable() {
 		return serializable;
@@ -203,9 +202,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			for (OptimisticConnection con : transactions.keySet()) {
 				if (con == prepared)
 					continue;
-				synchronized (con) {
-					changed(added, removed, con);
-				}
+				con.changed(added, removed);
 			}		
 		}
 	}
@@ -236,7 +233,6 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 				prepared = null;
 				notify();
 			}
-			con.setConflict(null);
 		} finally {
 			lock.release();
 		}
@@ -296,30 +292,6 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		} finally {
 			merger.close();
 		}
-	}
-
-	private void changed(MemoryOverflowModel added, MemoryOverflowModel removed, OptimisticConnection con)
-			throws SailException {
-		if (con.isConflict()) {
-			con.addChangeSet(added, removed);
-		} else {
-			for (EvaluateOperation op : con.getReadOperations()) {
-				if (!added.isEmpty() && effects(added, op)) {
-					con.setConflict(inconsistency(added, op));
-					con.addChangeSet(added, removed);
-					break;
-				}
-				if (!removed.isEmpty() && effects(removed, op)) {
-					con.setConflict(inconsistency(removed, op));
-					con.addChangeSet(added, removed);
-					break;
-				}
-			}
-		}
-	}
-
-	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
-		return new ConcurrencyException("Observed State has Changed", op, delta);
 	}
 	
 }

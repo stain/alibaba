@@ -33,13 +33,17 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
 /**
- * Thrown when serializable isolation could not be guaranteed in a transaction.
+ * Thrown when serializable or snapshot isolation could not be guaranteed in a transaction.
  * 
  * @author James Leigh
  * 
  */
 public class ConcurrencyException extends RepositoryException {
 	private static final long serialVersionUID = 6505874891312495635L;
+
+	public ConcurrencyException(ConcurrencyException cause) {
+		super(cause.getMessage(), cause);
+	}
 
 	public ConcurrencyException(String msg, EvaluateOperation op, Model removed) {
 		super(msg + "\n" + op.toString());

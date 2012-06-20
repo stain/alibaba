@@ -182,7 +182,7 @@ class OptimisticNamedQuery implements NamedQuery, SailChangedListener {
 		return delegate;
 	}
 
-	// based on OptimisticConnection.addChangeSet(), but using sailChanged event
+	// based on OptimisticConnection.changed, but using sailChanged event
 	// to trigger conflict detection
 
 	private boolean conflicts(Model added, Model removed, OptimisticSail sail) {

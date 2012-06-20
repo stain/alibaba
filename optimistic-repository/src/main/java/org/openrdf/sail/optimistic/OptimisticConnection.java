@@ -87,7 +87,7 @@ import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
-import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
+import org.openrdf.sail.optimistic.helpers.InconsistentChange;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 import org.openrdf.sail.optimistic.helpers.InvalidTripleSource;
@@ -118,7 +118,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	private OptimisticSail sail;
-	private boolean readSnapshot;
+	private boolean readSnapshot = true;
 	private boolean snapshot;
 	private boolean serializable;
 	private volatile boolean active;
@@ -134,12 +134,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	private Map<String, String> addedNamespaces = new HashMap<String, String>();
 	/** locked by this */
 	private Set<String> removedPrefixes = new HashSet<String>();
-	/** locked by sail.getReadLock() then this */
-	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
-	private LinkedList<ChangeWithReadSet> changesets = new LinkedList<ChangeWithReadSet>(); 
+	/** locked by observations */
+	private final Set<EvaluateOperation> observations = new HashSet<EvaluateOperation>();
+	/** locked by observations */
+	private final LinkedList<InconsistentChange> changes = new LinkedList<InconsistentChange>();
 	/** If sail.getWriteLock() */
 	private volatile boolean prepared;
-	private volatile ConcurrencyException conflict;
 	private volatile SailChangeSetEvent event;
 	private volatile boolean listenersIsEmpty = true;
 	private Set<SailConnectionListener> listeners = new HashSet<SailConnectionListener>();
@@ -160,7 +160,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	public boolean isReadSnapshot() {
-		return readSnapshot;
+		return readSnapshot || isSnapshot();
 	}
 
 	public void setReadSnapshot(boolean readSnapshot) throws SailException, InterruptedException {
@@ -169,22 +169,22 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				sail.exclusive(this);
 			}
 			synchronized (this) {
-				read.clear();
-				releaseChangesets(changesets);
+				releaseObservedChange();
 				flush();
 			}
+			setSnapshot(false);
 		}
 		this.readSnapshot = readSnapshot;
 	}
 
 	public boolean isSnapshot() {
-		return snapshot;
+		return snapshot || isSerializable();
 	}
 
 	public void setSnapshot(boolean snapshot) {
 		this.snapshot = snapshot;
-		if (snapshot) {
-			this.readSnapshot = true;
+		if (!snapshot) {
+			setSerializable(false);
 		}
 	}
 
@@ -194,9 +194,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	public void setSerializable(boolean serializable) {
 		this.serializable = serializable;
-		if (serializable) {
-			this.readSnapshot = true;
-		}
 	}
 
 	public void close() throws SailException {
@@ -214,11 +211,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	/** locked by this */
 	public MemoryOverflowModel getRemovedModel() {
 		return removed;
-	}
-
-	/** locked by this */
-	public Set<EvaluateOperation> getReadOperations() {
-		return read;
 	}
 
 	public void addConnectionListener(SailConnectionListener listener) {
@@ -246,10 +238,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		synchronized (this) {
 			assert active == false;
 			active = true;
-			conflict = null;
 			event = new SailChangeSetEvent(sail);
-			releaseChangesets(changesets);
-			read.clear();
+			releaseObservedChange();
 			resetChangeModel();
 		}
 		try {
@@ -279,12 +269,10 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				flush();
 				delegate.commit();
 				active = false;
-				conflict = null;
 				prepared = false;
-				read.clear();
 				addedContexts.clear();
 				removedContexts.clear();
-				releaseChangesets(changesets);
+				releaseObservedChange();
 				event.setTime(System.currentTimeMillis());
 				sail.endAndNotify(this, event);
 				event = null;
@@ -301,12 +289,10 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			delegate.rollback();
 			synchronized (this) {
 				resetChangeModel();
-				read.clear();
 				addedContexts.clear();
 				removedContexts.clear();
-				releaseChangesets(changesets);
+				releaseObservedChange();
 				active = false;
-				conflict = null;
 				prepared = false;
 				event = null;
 			}
@@ -690,18 +676,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			throw new IllegalStateException();
 	}
 
-	boolean isConflict() {
-		return conflict != null;
-	}
-
-	void setConflict(ConcurrencyException exc) {
-		this.conflict = exc;
-	}
-
-	void addChangeSet(MemoryOverflowModel added, MemoryOverflowModel removed) {
-		changesets.add(new ChangeWithReadSet(added, removed));
-	}
-
 	/** locked by this */
 	synchronized void flush() throws SailException {
 		for (String prefix : removedPrefixes) {
@@ -803,6 +777,31 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return called;
 	}
 
+	/**
+	 * Checks this change to see if it is inconsistent with the observed state
+	 * of the store.
+	 */
+	void changed(MemoryOverflowModel added, MemoryOverflowModel removed)
+			throws SailException {
+		synchronized (observations) {
+			for (EvaluateOperation op : observations) {
+				if (!added.isEmpty() && sail.effects(added, op)) {
+					ConcurrencyException inc = inconsistency(added, op);
+					changes.add(new InconsistentChange(added, removed, inc));
+					break;
+				} else if (!removed.isEmpty() && sail.effects(removed, op)) {
+					ConcurrencyException inc = inconsistency(removed, op);
+					changes.add(new InconsistentChange(added, removed, inc));
+					break;
+				}
+			}
+		}
+	}
+
+	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
+		return new ConcurrencyException("Observed State has Changed", op, delta);
+	}
+
 	private synchronized void setStatementsAdded() {
 		if (event != null) {
 			event.setStatementsAdded(true);
@@ -833,11 +832,14 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return query;
 	}
 
-	private void releaseChangesets(LinkedList<ChangeWithReadSet> changesets) {
-		for (ChangeWithReadSet changes : changesets) {
-			changes.release();
+	private void releaseObservedChange() {
+		synchronized (observations) {
+			observations.clear();
+			for (InconsistentChange change : changes) {
+				change.release();
+			}
+			changes.clear();
 		}
-		changesets.clear();
 	}
 
 	private void resetChangeModel() {
@@ -862,37 +864,42 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		} catch (InterruptedException e) {
 			throw new SailException(e);
 		}
-		if (isSerializable() && conflict != null && !isReadOnly()) {
+		ConcurrencyException conflict = getConcurrencyConflict();
+		if (conflict != null) {
 			try {
 				throw new ConcurrencySailException(conflict);
 			} finally {
 				rollback();
 			}
-		} else if (!changesets.isEmpty()) {
-			synchronized (this) {
-				conflict = findConflict(changesets, conflict);
-			}
-			if (conflict != null) {
-				try {
-					throw new ConcurrencySailException(conflict);
-				} finally {
-					rollback();
-				}
-			}
 		}
 	}
 
-	private ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets,
-			ConcurrencyException cause) throws SailException {
-		for (ChangeWithReadSet cs : changesets) {
+	private ConcurrencyException getConcurrencyConflict() throws SailException {
+		synchronized (observations) {
+			if (changes.isEmpty())
+				return null;
+			if (isSerializable()) {
+				ConcurrencyException c = changes.getFirst().getInconsistency();
+				return new ConcurrencyException(c);
+			}
+			// check if the inconsistent state caused a phantom read
+			return detectPhantomRead(changes);
+		}
+	}
+
+	/**
+	 * Searches for observations that observed a subsequent state change of the store
+	 */
+	private ConcurrencyException detectPhantomRead(LinkedList<InconsistentChange> changesets) throws SailException {
+		for (InconsistentChange cs : changesets) {
 			Model added = cs.getAdded();
 			Model removed = cs.getRemoved();
-			for (EvaluateOperation op : cs.getReadOperations()) {
+			for (EvaluateOperation op : cs.getSubsequentObservations()) {
 				if (!added.isEmpty() && sail.effects(added, op)) {
-					return phantom(added, op, cause);
+					return phantom(added, op, cs.getInconsistency());
 				}
 				if (!removed.isEmpty() && sail.effects(removed, op)) {
-					return phantom(removed, op, cause);
+					return phantom(removed, op, cs.getInconsistency());
 				}
 			}
 		}
@@ -903,10 +910,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			ConcurrencyException cause) {
 		return new ConcurrencyException("Observed Inconsistent State", op,
 				delta, cause);
-	}
-
-	private boolean isReadOnly() {
-		return added.isEmpty() && removed.isEmpty();
 	}
 
 	/** locked by this */
@@ -932,9 +935,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	private void addRead(EvaluateOperation op) {
 		if (isSnapshot()) {
-			read.add(op);
-			for (ChangeWithReadSet changeset : changesets) {
-				changeset.addRead(op);
+			synchronized (observations) {
+				observations.add(op);
+				for (InconsistentChange changeset : changes) {
+					changeset.addObservation(op);
+				}
 			}
 		}
 	}

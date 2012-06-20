@@ -33,22 +33,25 @@ import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.impl.MemoryOverflowModel;
+import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
- * Changeset that occurred during a transaction and all the read operations that
- * were performed since the changeset appeared.
+ * Changeset that appeared, but was not observed during a transaction and all
+ * the subsequentObservations that were performed since the changeset appeared.
  * 
  * @author James Leigh
  * 
  */
-public class ChangeWithReadSet {
-	private MemoryOverflowModel added;
-	private MemoryOverflowModel removed;
-	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
+public class InconsistentChange {
+	private final MemoryOverflowModel added;
+	private final MemoryOverflowModel removed;
+	private final ConcurrencyException inconsistency;
+	private final Set<EvaluateOperation> subsequentObservations = new HashSet<EvaluateOperation>();
 
-	public ChangeWithReadSet(MemoryOverflowModel added, MemoryOverflowModel removed) {
+	public InconsistentChange(MemoryOverflowModel added, MemoryOverflowModel removed, ConcurrencyException inconsistency) {
 		this.added = added.open();
 		this.removed = removed.open();
+		this.inconsistency = inconsistency;
 	}
 
 	public Model getAdded() {
@@ -59,12 +62,16 @@ public class ChangeWithReadSet {
 		return removed;
 	}
 
-	public Set<EvaluateOperation> getReadOperations() {
-		return read;
+	public ConcurrencyException getInconsistency() {
+		return inconsistency;
 	}
 
-	public void addRead(EvaluateOperation op) {
-		read.add(op);
+	public Set<EvaluateOperation> getSubsequentObservations() {
+		return subsequentObservations;
+	}
+
+	public void addObservation(EvaluateOperation op) {
+		subsequentObservations.add(op);
 	}
 
 	public void release() {
