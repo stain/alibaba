@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Jan 2012
+ June 2012
 
 
 AliBaba
@@ -12,9 +12,9 @@ AliBaba
 
  The program models used in today's software are growing in complexity. Most object-oriented models were not designed for the amount of growth and increased scope of today interconnected software agents. This is increasing the cost of new feature development and the cost of maintaining the software model. The object oriented paradigm was designed to model complex systems with complex behaviours, but many of its most powerful concepts (such as specialisation) are too often overlooked when designing distributed systems. By combining the flexibility and adaptivity of RDF with an powerful Object Oriented programming model, {{{./alibaba-repository-object/index.html}AliBaba's object repository}} is able to provide programmers with increased expressivity and a simplified subject-oriented programming environment. This can accelerate the time to market and reduce maintenance cost down the road.
 
- Most RDF stores are optimized for read and bulk load operations, optimizing small concurrent write operations and data consistency is often overlooked. The {{{./alibaba-repository-optimistic/index.html}optimistic repository of AliBaba}} is designed to improve the performance of small write operations by supporting concurrent write transactions and protects your data from data inconsistency issues when snapshot and serializable transactions are enabled.
+ Provenance is too often overlooked with in new deployments and often too expensive to integrate into existing systems. To address this, AliBaba includes an {{{./alibaba-repository-auditing/index.html}auditing repository}}. The auditing repository is a repository wrapper to track and record changes to the triple store.
 
- Provenance is too often overlooked with in new deployments and often too expensive to integrate into existing systems. To address this, AliBaba includes an {{{./alibaba-sail-auditing/index.html}auditing SAIL}}. The auditing SAIL is a transparent Storage And Inference Layer (SAIL) to track and record changes to the triple store.
+ Most RDF stores are optimized for read and bulk load operations, optimizing small concurrent write operations and data consistency is often overlooked. The {{{./alibaba-repository-optimistic/index.html}optimistic repository of AliBaba}} is designed to improve the performance of small write operations by supporting concurrent write transactions and protects your data from data inconsistency issues when snapshot and serializable transactions are enabled.
 
  Today most people expect to be able to search their data using keywords. However, modern full text indexing has lots of overhead with large indexes and offline indexing. {{{./alibaba-sail-keyword/index.html}AliBaba's keyword SAIL}} allows quick and easy indexing of keywords for RDF resources.
 

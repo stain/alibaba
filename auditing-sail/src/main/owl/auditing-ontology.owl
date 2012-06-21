@@ -14,8 +14,8 @@
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">Auditing</rdfs:label>
-		<dc:title xml:lang="en">AliBaba Auditing Ontology</dc:title>
+		<rdfs:label xml:lang="en">Auditing SAIL</rdfs:label>
+		<dc:title xml:lang="en">AliBaba Auditing SAIL Ontology</dc:title>
 		<dc:date rdf:datatype="&xsd;date">2011-02-17</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>

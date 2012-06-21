@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
+   <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
+   <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+   <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
+   <!ENTITY prov   "http://www.w3.org/ns/prov#" >
+   <!ENTITY audit  "http://www.openrdf.org/rdf/2012/auditing#" >
+ ]>
+<rdf:RDF xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;"
+	xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;" xmlns:aud="&audit;"
+	xml:base="http://www.openrdf.org/rdf/2012/auditing">
+
+	<!-- Ontology -->
+
+	<owl:Ontology rdf:about="">
+		<rdfs:label xml:lang="en">Auditing Repository</rdfs:label>
+		<dc:title xml:lang="en">AliBaba Auditing Repository Ontology</dc:title>
+		<dc:date rdf:datatype="&xsd;date">2012-06-21</dc:date>
+		<dc:format>OWL-Lite</dc:format>
+		<dc:creator>James Leigh &lt;james@3roundstones.com&gt;</dc:creator>
+		<owl:versionInfo>2.0</owl:versionInfo>
+	</owl:Ontology>
+
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="RecentActivity">
+		<rdfs:label xml:lang="en">Recent Activity</rdfs:label>
+		<rdfs:comment xml:lang="en">A rolling set of recent changes.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subClassOf rdf:resource="&prov;Activity" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="ObsoleteActivity">
+		<rdfs:label xml:lang="en">Obsolete Activity</rdfs:label>
+		<rdfs:comment xml:lang="en">An activity that does not contribute to the current state of any entity.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subClassOf rdf:resource="&prov;Activity" />
+	</owl:Class>
+
+	<!-- Properties -->
+
+	<owl:ObjectProperty rdf:ID="changed">
+		<rdfs:label xml:lang="en">changed</rdfs:label>
+		<rdfs:comment xml:lang="en">Triple that was added or removed.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="&prov;Usage" />
+		<rdfs:range rdf:resource="&rdf;Statement" />
+	</owl:ObjectProperty>
+
+</rdf:RDF>

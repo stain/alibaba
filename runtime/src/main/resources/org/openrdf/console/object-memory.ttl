@@ -17,28 +17,28 @@
    rdfs:label "{%Repository title|Memory store%}" ;
    rep:repositoryImpl [
       rep:repositoryType "openrdf:ObjectRepository" ;
-      rep:delegate [
-         rep:repositoryType "openrdf:OptimisticRepository" ;
-         opt:snapshot {%Rollback if multiple states observed (enforce snapshot)?|false|true%} ;
-         opt:serializable {%Rollback if outdated state observed (enforce serializable)?|false|true%} ;
-         sr:sailImpl [
-            sail:sailType "openrdf:AuditingSail" ;
-            audit:trxNamespace "{%Changeset namespace|urn:trx:localhost:%}" ;
-            audit:archiving {%Archive all removed data|false|true%} ;
-            audit:maximumArchiveTriples {%If not, archive transactions with removed triples less than|100%} ;
-            audit:purgeObsoleteTransactionsAfter "P{%Purge obsolete transactions after this many days|365%}D" ;
-            audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
-            audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
-            sail:delegate [
-              sail:sailType "openrdf:KeywordSail" ;
-              sail:delegate [
-                sail:sailType "openrdf:MemoryStore" ;
-                ms:persist {%Persist|true|false%} ;
-                ms:syncDelay {%Sync delay|0%}
-              ]
-           ]
-         ]
-      ] ;
+	  rep:delegate [
+	      rep:repositoryType "openrdf:AuditingRepository" ;
+	      audit:purgeObsoleteTransactionsAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
+	      audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
+	      audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
+	      rep:delegate [
+	         rep:repositoryType "openrdf:OptimisticRepository" ;
+	         opt:snapshot {%Rollback if multiple states observed (enforce snapshot)?|false|true%} ;
+	         opt:serializable {%Rollback if outdated state observed (enforce serializable)?|false|true%} ;
+	         sr:sailImpl [
+	            sail:sailType "openrdf:AuditingSail" ;
+	            sail:delegate [
+	              sail:sailType "openrdf:KeywordSail" ;
+	              sail:delegate [
+	                sail:sailType "openrdf:MemoryStore" ;
+	                ms:persist {%Persist|true|false%} ;
+	                ms:syncDelay {%Sync delay|0%}
+	              ]
+	           ]
+	         ]
+	      ]
+	  ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;
       ctx:queryLanguage "{%Default Query Language|SPARQL%}" ;
       obj:imports <{%Ontology|http://www.w3.org/2002/07/owl%}> ;

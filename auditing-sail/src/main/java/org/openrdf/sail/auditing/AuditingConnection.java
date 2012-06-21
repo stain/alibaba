@@ -60,12 +60,17 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.UpdateExpr;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.auditing.helpers.BasicGraphPatternVisitor;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
@@ -74,12 +79,19 @@ import org.openrdf.sail.helpers.SailUpdateExecutor;
  * Intercepts the add and remove operations and add a revision to each resource.
  */
 public class AuditingConnection extends SailConnectionWrapper {
+	private static final String AUDIT_2012 = "http://www.openrdf.org/rdf/2012/auditing#";
+	private static final String PROV = "http://www.w3.org/ns/prov#";
+	private static final String WAS_INFORMED_BY = PROV + "wasInformedBy";
+	private static final String QUALIFIED_USAGE = PROV + "qualifiedUsage";
+	private static final String ENTITY = PROV + "entity";
+	private static final String GENERATED_BY = PROV + "wasGeneratedBy";
+	private static final String CHANGED = AUDIT_2012 + "changed";
 	private static int MAX_REVISED = 1024;
-	private AuditingSail sail;
+	private final AuditingSail sail;
 	private URI trx;
-	private DatatypeFactory factory;
-	private ValueFactory vf;
-	private Map<Resource, Boolean> revised = new LinkedHashMap<Resource, Boolean>(
+	private final DatatypeFactory factory;
+	private final ValueFactory vf;
+	private final Map<Resource, Boolean> revised = new LinkedHashMap<Resource, Boolean>(
 			128, 0.75f, true) {
 		private static final long serialVersionUID = 1863694012435196527L;
 
@@ -87,11 +99,18 @@ public class AuditingConnection extends SailConnectionWrapper {
 			return size() > MAX_REVISED;
 		}
 	};
-	private Set<Resource> modified = new HashSet<Resource>();
-	private List<Statement> metadata = new ArrayList<Statement>();
-	private List<Statement> arch = new ArrayList<Statement>();
+	private final Set<Resource> modified = new HashSet<Resource>();
+	private final MemoryOverflowModel metadata = new MemoryOverflowModel();
+	private final List<Statement> arch = new ArrayList<Statement>();
 	private Set<? extends Resource> predecessors;
-	private URI currentTrx;
+	private final URI currentTrx;
+	private final URI informedBy;
+	private final URI qualifiedUsage;
+	private final URI usedEntity;
+	private final URI changed;
+	private final URI subject;
+	private final URI predicate;
+	private final URI object;
 
 	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon,
 			Set<Resource> predecessors) throws DatatypeConfigurationException {
@@ -101,6 +120,13 @@ public class AuditingConnection extends SailConnectionWrapper {
 		vf = sail.getValueFactory();
 		currentTrx = vf.createURI(CURRENT_TRX.stringValue());
 		this.predecessors = predecessors;
+		informedBy = vf.createURI(WAS_INFORMED_BY);
+		qualifiedUsage = vf.createURI(QUALIFIED_USAGE);
+		usedEntity = vf.createURI(ENTITY);
+		changed = vf.createURI(CHANGED);
+		subject = vf.createURI(RDF.SUBJECT.stringValue());
+		predicate = vf.createURI(RDF.PREDICATE.stringValue());
+		object = vf.createURI(RDF.OBJECT.stringValue());
 	}
 
 	@Override
@@ -108,15 +134,32 @@ public class AuditingConnection extends SailConnectionWrapper {
 		return super.getWrappedConnection();
 	}
 
+	@Override
+	public void close() throws SailException {
+		super.close();
+		metadata.release();
+	}
+
 	public synchronized URI getTransactionURI() throws SailException {
 		return getTrx();
 	}
 
 	@Override
-	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
+	public void executeUpdate(UpdateExpr updateExpr, Dataset ds,
 			BindingSet bindings, boolean includeInferred) throws SailException {
-		SailUpdateExecutor executor = new SailUpdateExecutor(this, sail.getValueFactory(), false);
-		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
+		SailConnection remover = this;
+		final URI activity = ds == null ? null : ds.getDefaultInsertGraph();
+		if (activity != null) {
+			final URI entity = getOperationEntity(updateExpr, ds, bindings);
+			remover = new SailConnectionWrapper(this) {
+				public void removeStatements(Resource subj, URI pred,
+						Value obj, Resource... ctx) throws SailException {
+					removeInforming(activity, entity, subj, pred, obj, ctx);
+				}
+			};
+		}
+		SailUpdateExecutor executor = new SailUpdateExecutor(remover, vf, false);
+		executor.executeUpdate(updateExpr, ds, bindings, includeInferred);
 	}
 
 	@Override
@@ -315,21 +358,30 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
-		addRevision(subj);
 		if (contexts == null || contexts.length == 0 || contexts.length == 1
 				&& contexts[0] == null) {
+			addRevision(subj);
 			super.addStatement(subj, pred, obj, getTrx());
 		} else if (contexts.length == 1) {
+			if (contexts[0].equals(trx)) {
+				addRevision(subj);
+			}
 			super.addStatement(subj, pred, obj, contexts);
 			Resource ctx = contexts[0];
 			if (isURI(ctx) && !ctx.equals(trx) && modified.add(ctx)) {
-				super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+				addMetadata(currentTrx, MODIFIED, ctx, currentTrx);
 			}
 		} else {
+			for (Resource ctx : contexts) {
+				if (ctx == null || ctx.equals(trx)) {
+					addRevision(subj);
+					break;
+				}
+			}
 			super.addStatement(subj, pred, obj, contexts);
 			for (Resource ctx : contexts) {
 				if (isURI(ctx) && !ctx.equals(trx) && modified.add(ctx)) {
-					super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+					addMetadata(currentTrx, MODIFIED, ctx, currentTrx);
 				}
 			}
 		}
@@ -362,7 +414,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			revised.put(h, Boolean.TRUE);
 			if (pred != null && !REVISION.equals(pred)) {
 				removeAllRevisions(subj);
-				super.addStatement(h, REVISION, getTrx(), getTrx());
+				addMetadata(h, REVISION, currentTrx, currentTrx);
 			} else {
 				URI uri = (URI) subj;
 				String ns = uri.getNamespace();
@@ -419,20 +471,18 @@ public class AuditingConnection extends SailConnectionWrapper {
 				Statement st = stmts.next();
 				URI pred = st.getPredicate();
 				Value obj = st.getObject();
+				String ns = pred.getNamespace();
+				if (Audit.NAMESPACE.equals(ns) || PROV.equals(ns)
+						|| AUDIT_2012.equals(ns))
+					continue;
 				if (RDF.SUBJECT.equals(pred) || RDF.PREDICATE.equals(pred)
 						|| RDF.OBJECT.equals(pred))
 					continue;
-				if (Audit.COMMITTED_ON.equals(pred)
-						|| Audit.CONTAINED.equals(pred)
-						|| Audit.MODIFIED.equals(pred)
-						|| Audit.PREDECESSOR.equals(pred)
-						|| Audit.CONTRIBUTED.equals(pred))
-					continue;
-				if (RDF.TYPE.equals(pred)) {
-					if (Audit.TRANSACTION.equals(obj)
-							|| Audit.RECENT.equals(obj)
-							|| Audit.OBSOLETE.equals(obj)
-							|| RDF.STATEMENT.equals(obj))
+				if (RDF.TYPE.equals(pred) && obj instanceof URI) {
+					ns = ((URI) obj).getNamespace();
+					if (Audit.NAMESPACE.equals(ns) || PROV.equals(ns)
+							|| AUDIT_2012.equals(ns)
+							|| RDF.NAMESPACE.equals(ns))
 						continue;
 				}
 				return false;
@@ -441,5 +491,108 @@ public class AuditingConnection extends SailConnectionWrapper {
 			stmts.close();
 		}
 		return true;
+	}
+
+	private URI getOperationEntity(UpdateExpr updateExpr, Dataset dataset, BindingSet bindings) {
+		if (dataset == null)
+			return null;
+		URI activity = dataset.getDefaultInsertGraph();
+		if (activity == null || activity.stringValue().indexOf('#') >= 0)
+			return null;
+		final Set<Var> subjects = new HashSet<Var>();
+		final Set<Var> objects = new HashSet<Var>();
+		try {
+			updateExpr.visit(new BasicGraphPatternVisitor() {
+				public void meet(StatementPattern node) {
+					subjects.add(node.getSubjectVar());
+					objects.add(node.getObjectVar());
+				}
+			});
+		} catch (QueryEvaluationException e) {
+			throw new AssertionError(e);
+		}
+		URI entity = null;
+		for (Var var : subjects) {
+			Value subj = var.getValue();
+			if (subj == null) {
+				subj = bindings.getValue(var.getName());
+			}
+			if (subj instanceof URI) {
+				if (entity == null) {
+					entity = entity((URI) subj);
+				} else if (!entity.equals(entity((URI) subj))) {
+					return null;
+				}
+			} else if (!objects.contains(var)) {
+				return null;
+			}
+		}
+		return entity;
+	}
+
+	private void removeInforming(URI activity, URI entity, Resource subj, URI pred,
+			Value obj, Resource... contexts) throws SailException {
+		if (contexts != null && contexts.length == 0) {
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = super.getStatements(subj, pred, obj, false, contexts);
+			try {
+				while (stmts.hasNext()) {
+					Statement st = stmts.next();
+					Resource ctx = st.getContext();
+					subj = st.getSubject();
+					pred = st.getPredicate();
+					obj = st.getObject();
+					removeInformingGraph(activity, entity, subj, pred, obj, ctx);
+				}
+			} finally {
+				stmts.close();
+			}
+		} else if (contexts == null) {
+			removeInformingGraph(activity, entity, subj, pred, obj, null);
+		} else {
+			for (Resource ctx : contexts) {
+				removeInformingGraph(activity, entity, subj, pred, obj, ctx);
+			}
+		}
+	}
+
+	private void removeInformingGraph(URI activity, URI entity, Resource subj,
+			URI pred, Value obj, Resource ctx) throws SailException {
+		reify(activity, entity, subj, pred, obj, ctx);
+		super.removeStatements(subj, pred, obj, ctx);
+	}
+
+	private void reify(URI activity, URI entity, Resource subj, URI pred,
+			Value obj, Resource ctx) throws SailException {
+		String ns = activity.stringValue();
+		if (ctx instanceof URI) {
+			super.addStatement(activity, informedBy, ctx, activity);
+		}
+		if (entity == null || GENERATED_BY.equals(pred.stringValue()))
+			return;
+		URI operation = vf.createURI(ns + "#" + hash(ctx, entity));
+		if (ctx instanceof URI) {
+			super.addStatement(ctx, qualifiedUsage, operation, activity);
+		}
+		super.addStatement(activity, qualifiedUsage, operation, activity);
+		super.addStatement(operation, usedEntity, entity, activity);
+		Resource node = vf.createBNode();
+		super.addStatement(operation, changed, node, activity);
+		super.addStatement(node, subject, subj, activity);
+		super.addStatement(node, predicate, pred, activity);
+		super.addStatement(node, object, obj, activity);
+	}
+
+	private String hash(Resource ctx, Resource entity) {
+		return Integer.toHexString(31 * ctx.hashCode() + entity.hashCode());
+	}
+
+	private URI entity(URI subject) {
+		URI entity = subject;
+		int hash = entity.stringValue().indexOf('#');
+		if (hash > 0) {
+			entity = vf.createURI(entity.stringValue().substring(0, hash));
+		}
+		return entity;
 	}
 }

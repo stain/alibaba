@@ -15,8 +15,8 @@
     <menu name="Site contents" inherit="top">
       <item name="AliBaba" href="http://openrdf.org/doc/alibaba/${project.version}/index.html">
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-object/index.html" name="Object Repository"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-auditing/index.html" name="Auditing Repository"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
-        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-auditing/index.html" name="Auditing SAIL"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-keyword/index.html" name="Keyword SAIL"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-store-blob/index.html" name="Blob Store"/>
       </item>

@@ -7,6 +7,7 @@
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix obj:  <http://www.openrdf.org/config/repository/object#>.
+@prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Local repository ID|SYSTEM@localhost%}" ;
@@ -14,8 +15,14 @@
    rep:repositoryImpl [
       rep:repositoryType "openrdf:ObjectRepository" ;
       rep:delegate [
-         rep:repositoryType "openrdf:HTTPRepository" ;
-         hr:repositoryURL <{%Sesame server location|http://localhost:8080/openrdf-sesame%}/repositories/{%Remote repository ID|SYSTEM%}>
+	     rep:repositoryType "openrdf:AuditingRepository" ;
+	     audit:purgeObsoleteTransactionsAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
+	     audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
+	     audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
+	     rep:delegate [
+	         rep:repositoryType "openrdf:HTTPRepository" ;
+	         hr:repositoryURL <{%Sesame server location|http://localhost:8080/openrdf-sesame%}/repositories/{%Remote repository ID|SYSTEM%}>
+	     ]
       ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;
       ctx:queryLanguage "{%Default Query Language|SPARQL%}" ;
