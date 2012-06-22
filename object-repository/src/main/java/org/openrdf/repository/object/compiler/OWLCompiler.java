@@ -40,7 +40,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -758,7 +757,7 @@ public class OWLCompiler {
 			for (URL rdf : rdfSources) {
 				try {
 					String path = "META-INF/ontologies/";
-					path += new File(rdf.toURI()).getName();
+					path += getLocalName(rdf.toExternalForm());
 					InputStream in = rdf.openStream();
 					try {
 						File file = new File(dir, path);
@@ -779,13 +778,42 @@ public class OWLCompiler {
 					inf.println(path);
 				} catch (ConnectException exc) {
 					throw new IOException("Cannot connect to " + rdf, exc);
-				} catch (URISyntaxException e) {
-					throw new AssertionError(e);
 				}
 			}
 		} finally {
 			inf.close();
 		}
+	}
+
+	private String getLocalName(String uri) {
+		int start = uri.indexOf('#');
+		int end = uri.length();
+		if (start >= 0 && start < end - 1)
+			return uri.substring(start + 1, end);
+		if (start >= 0 && start < end) {
+			end = start;
+		}
+
+		int idx = uri.lastIndexOf('?');
+		if (idx >= 0) {
+			end = idx;
+		}
+
+		start = uri.lastIndexOf('/');
+		if (start >= 0 && start < end - 1)
+			return uri.substring(start + 1, end);
+		if (start >= 0 && start < end) {
+			end = start;
+		}
+
+		start = uri.lastIndexOf(':');
+		if (start >= 0 && start < end - 1)
+			return uri.substring(start + 1, end);
+		if (start >= 0 && start < end) {
+			end = start;
+		}
+
+		return uri;
 	}
 
 }

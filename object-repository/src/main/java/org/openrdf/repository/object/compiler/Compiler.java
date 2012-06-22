@@ -87,6 +87,7 @@ public abstract class Compiler {
 		options.addOption(imports);
 		options.addOption(follow);
 		options.addOption(s);
+		options.addOption(o);
 	}
 
 	public static void main(String[] args) throws Exception {
