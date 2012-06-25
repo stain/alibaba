@@ -83,13 +83,12 @@ import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
-import org.openrdf.sail.optimistic.helpers.InconsistentChange;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
+import org.openrdf.sail.optimistic.helpers.InconsistentChange;
 import org.openrdf.sail.optimistic.helpers.InvalidTripleSource;
 import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 
@@ -99,7 +98,7 @@ import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
  * @author James Leigh
  *
  */
-public class OptimisticConnection extends SailConnectionWrapper implements
+public class OptimisticConnection extends TransactionalSailConnectionWrapper implements
 		NotifyingSailConnection {
 	interface AddOperation {
 		void addNow(Resource subj, URI pred, Value obj, Resource... contexts)
@@ -230,11 +229,14 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return delegate.isOpen();
 	}
 
-	public boolean isAutoCommit() throws SailException {
-		return !active;
+	public boolean isActive() {
+		return active;
 	}
 
 	public void begin() throws SailException {
+		if (isActive())
+			throw new IllegalStateException("Transaction already started");
+		super.begin();
 		synchronized (this) {
 			assert active == false;
 			active = true;
@@ -252,12 +254,31 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
+	public synchronized void prepare() throws SailException {
+		super.prepare();
+		try {
+			sail.prepare(this);
+			prepared = true;
+		} catch (InterruptedException e) {
+			rollback();
+			throw new SailException(e);
+		}
+		ConcurrencyException conflict = getConcurrencyConflict();
+		if (conflict != null) {
+			try {
+				throw new ConcurrencySailException(conflict);
+			} finally {
+				rollback();
+			}
+		}
+	}
+
 	public void commit() throws SailException {
-		if (isAutoCommit())
+		if (!isActive())
 			return;
 		synchronized (this) {
 			try {
-				if (isAutoCommit())
+				if (!isActive())
 					return;
 				if (!prepared) {
 					prepare();
@@ -267,39 +288,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					event.setRemovedModel(removed);
 				}
 				flush();
-				delegate.commit();
-				active = false;
-				prepared = false;
-				addedContexts.clear();
-				removedContexts.clear();
-				releaseObservedChange();
-				event.setTime(System.currentTimeMillis());
-				sail.endAndNotify(this, event);
-				event = null;
-				resetChangeModel();
-			} finally {
-				// close resources opened in this transaction scope
-				sail.end(this);
+				super.commit();
+			} catch (SailException e) {
+				rollback();
+				throw e;
 			}
-		}
-	}
-
-	public void rollback() throws SailException {
-		try {
-			delegate.rollback();
-			synchronized (this) {
-				resetChangeModel();
-				addedContexts.clear();
-				removedContexts.clear();
-				releaseObservedChange();
-				active = false;
-				prepared = false;
-				event = null;
-			}
-		}
-		finally {
-			// close resources opened in this transaction scope
-			sail.end(this) ;
 		}
 	}
 
@@ -618,6 +611,28 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return evaluateWith(delegate, query, dataset, bindings, inf);
 	}
 
+	protected void end(boolean success) {
+		try {
+			synchronized (this) {
+				active = false;
+				prepared = false;
+				addedContexts.clear();
+				removedContexts.clear();
+				releaseObservedChange();
+				if (success) {
+					event.setTime(System.currentTimeMillis());
+					sail.endAndNotify(this, event);
+				}
+				event = null;
+				resetChangeModel();
+			}
+		}
+		finally {
+			// close resources opened in this transaction scope
+			sail.end(this) ;
+		}
+	}
+
 	CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateWith(
 			SailConnection delegate, TupleExpr query, Dataset dataset,
 			BindingSet bindings, boolean inf) throws SailException {
@@ -836,6 +851,13 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return query;
 	}
 
+	private void resetChangeModel() {
+		added.release();
+		removed.release();
+		added = new MemoryOverflowModel();
+		removed = new MemoryOverflowModel();
+	}
+
 	private void releaseObservedChange() {
 		synchronized (observations) {
 			observations.clear();
@@ -846,35 +868,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	private void resetChangeModel() {
-		added.release();
-		removed.release();
-		added = new MemoryOverflowModel();
-		removed = new MemoryOverflowModel();
-	}
-
 	private Set<SailConnectionListener> getListeners() {
 		synchronized (listeners) {
 			if (listeners.isEmpty())
 				return Collections.emptySet();
 			return new HashSet<SailConnectionListener>(listeners);
-		}
-	}
-
-	private void prepare() throws SailException {
-		try {
-			sail.prepare(this);
-			prepared = true;
-		} catch (InterruptedException e) {
-			throw new SailException(e);
-		}
-		ConcurrencyException conflict = getConcurrencyConflict();
-		if (conflict != null) {
-			try {
-				throw new ConcurrencySailException(conflict);
-			} finally {
-				rollback();
-			}
 		}
 	}
 

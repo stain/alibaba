@@ -50,10 +50,10 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
  */
 public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	private boolean active;
-	private OptimisticConnection sail;
+	private TransactionalSailConnection sail;
 
 	protected AutoCommitRepositoryConnection(SailRepository repository,
-			OptimisticConnection sail) {
+			TransactionalSailConnection sail) {
 		super(repository, sail);
 		this.sail = sail;
 	}
