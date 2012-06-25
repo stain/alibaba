@@ -54,7 +54,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
@@ -74,7 +74,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
@@ -94,7 +94,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
@@ -115,7 +115,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Remove an existing result
 			a.remove(PICASSO, PAINTS, GUERNICA);
@@ -136,7 +136,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Remove an existing result
 			a.remove(PICASSO, PAINTS, GUERNICA);
@@ -157,7 +157,7 @@ public class PathNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Remove an existing result
 			a.remove(PICASSO, PAINTS, GUERNICA);

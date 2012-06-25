@@ -58,7 +58,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(REMBRANDT, RDF.TYPE, PAINTER);
@@ -81,7 +81,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a filtered result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
@@ -111,7 +111,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// remove a result
 			a.remove(REMBRANDT, RDF.TYPE, PAINTER);
@@ -141,7 +141,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// remove non-result
 			a.remove(PICASSO, RDF.TYPE , PAINTER);
@@ -162,7 +162,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
@@ -181,7 +181,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
@@ -201,7 +201,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
@@ -221,7 +221,7 @@ public class FilterNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);

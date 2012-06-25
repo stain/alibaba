@@ -58,7 +58,7 @@ public class OptionalNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
@@ -82,7 +82,7 @@ public class OptionalNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Untyped painter is not a result
 			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
@@ -107,7 +107,7 @@ public class OptionalNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// removing the optional causes a change, but no fewer results
 			a.remove(PICASSO, PAINTS, GUERNICA);
@@ -135,7 +135,7 @@ public class OptionalNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// remove non-result
 			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);

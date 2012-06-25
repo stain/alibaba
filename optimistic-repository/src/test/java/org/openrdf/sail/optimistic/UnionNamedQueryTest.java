@@ -57,7 +57,7 @@ public class UnionNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// Add a new result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
@@ -81,7 +81,7 @@ public class UnionNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// data is not used in query
 			a.add(NIGHTWATCH, YEAR, vf.createLiteral(1642));
@@ -111,7 +111,7 @@ public class UnionNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// remove a result
 			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
@@ -141,7 +141,7 @@ public class UnionNamedQueryTest extends TestCase {
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
 			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
+			Thread.sleep(100) ;
 			
 			// remove non-result
 			a.remove(NIGHTWATCH, YEAR, vf.createLiteral(1642));
