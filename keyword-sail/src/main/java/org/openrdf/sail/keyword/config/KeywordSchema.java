@@ -36,6 +36,7 @@ public class KeywordSchema {
 	/** http://www.openrdf.org/config/sail/keyword# */
 	public static final String NAMESPACE = "http://www.openrdf.org/config/sail/keyword#";
 
+	public static final URI ENABLED = new URIImpl(NAMESPACE + "enabled");
 	public static final URI PHONE_PROPERTY = new URIImpl(NAMESPACE + "phoneProperty");
 	public static final URI PHONE_GRAPH = new URIImpl(NAMESPACE + "phoneGraph");
 	public static final URI KEYWORD_PROPERTY = new URIImpl(NAMESPACE + "keywordProperty");

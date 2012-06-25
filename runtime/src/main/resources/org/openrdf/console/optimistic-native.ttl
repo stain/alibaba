@@ -8,6 +8,7 @@
 @prefix ns: <http://www.openrdf.org/config/sail/native#>.
 @prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 @prefix opt: <http://www.openrdf.org/config/repository/optimistic#>.
+@prefix keyword: <http://www.openrdf.org/config/sail/keyword#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|native%}" ;
@@ -25,6 +26,7 @@
 	         sail:sailType "openrdf:AuditingSail" ;
 	         sail:delegate [
 	           sail:sailType "openrdf:KeywordSail" ;
+	           keyword:enabled {%Index label keywords?|true|false%} ;
 	           sail:delegate [
 	             sail:sailType "openrdf:NativeStore" ;
 	             ns:tripleIndexes "{%Triple indexes|spoc,posc%}"

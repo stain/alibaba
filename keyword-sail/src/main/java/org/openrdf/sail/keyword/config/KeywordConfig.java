@@ -28,6 +28,7 @@
  */
 package org.openrdf.sail.keyword.config;
 
+import static org.openrdf.sail.keyword.config.KeywordSchema.ENABLED;
 import static org.openrdf.sail.keyword.config.KeywordSchema.KEYWORD_PROPERTY;
 import static org.openrdf.sail.keyword.config.KeywordSchema.PHONE_GRAPH;
 import static org.openrdf.sail.keyword.config.KeywordSchema.PHONE_PROPERTY;
@@ -36,16 +37,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.Graph;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.sail.config.DelegatingSailImplConfigBase;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfig;
 
 public class KeywordConfig extends DelegatingSailImplConfigBase {
+	private final ValueFactory vf = ValueFactoryImpl.getInstance();
 
 	public KeywordConfig() {
 		super(KeywordFactory.SAIL_TYPE);
@@ -55,9 +60,18 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 		super(KeywordFactory.SAIL_TYPE, delegate);
 	}
 
+	private Boolean enabled;
 	private Set<URI> keywordProperties;
 	private URI phoneProperty;
 	private URI phoneGraph;
+
+	public boolean isEnabled() {
+		return enabled == null ? true : enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
 
 	public Set<URI> getKeywordProperties() {
 		return keywordProperties;
@@ -86,6 +100,9 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 	@Override
 	public Resource export(Graph model) {
 		Resource self = super.export(model);
+		if (enabled != null) {
+			model.add(self, ENABLED, vf.createLiteral(enabled));
+		}
 		if (keywordProperties != null && !keywordProperties.isEmpty()) {
 			for (URI uri : keywordProperties) {
 				model.add(self, KEYWORD_PROPERTY, uri);
@@ -113,6 +130,11 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 		}
 		setPhoneProperty(model.filter(implNode, PHONE_PROPERTY, null).objectURI());
 		setPhoneGraph(model.filter(implNode, PHONE_GRAPH, null).objectURI());
+		Set<Value> set = model.filter(implNode, ENABLED, null).objects();
+		if (!set.isEmpty()) {
+			Literal lit = (Literal) set.iterator().next();
+			enabled = lit.booleanValue();
+		}
 	}
 
 }

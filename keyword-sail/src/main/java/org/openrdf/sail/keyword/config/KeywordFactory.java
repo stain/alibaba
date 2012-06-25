@@ -65,6 +65,7 @@ public class KeywordFactory implements SailFactory {
 		sail.setKeywordProperties(cfg.getKeywordProperties());
 		sail.setPhoneProperty(cfg.getPhoneProperty());
 		sail.setPhoneGraph(cfg.getPhoneGraph());
+		sail.setEnabled(cfg.isEnabled());
 		return sail;
 	}
 }

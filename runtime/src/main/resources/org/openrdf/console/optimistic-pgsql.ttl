@@ -8,6 +8,7 @@
 @prefix ns: <http://www.openrdf.org/config/sail/rdbms#>.
 @prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 @prefix opt: <http://www.openrdf.org/config/repository/optimistic#>.
+@prefix keyword: <http://www.openrdf.org/config/sail/keyword#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|pgsql%}" ;
@@ -26,6 +27,7 @@
          audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
          sail:delegate [
            sail:sailType "openrdf:KeywordSail" ;
+           keyword:enabled {%Index label keywords?|true|false%} ;
            sail:delegate [
              sail:sailType "openrdf:RdbmsStore" ;
              ns:jdbcDriver "{%JDBC driver|org.postgresql.Driver%}";

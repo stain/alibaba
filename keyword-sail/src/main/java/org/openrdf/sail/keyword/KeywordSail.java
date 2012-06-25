@@ -71,6 +71,7 @@ public class KeywordSail extends SailWrapper {
 	private static final String SETTING_PROPERTIES = "org.openrdf.sail.keyword.properties";
 	private static final String PHONE_URI = "http://www.openrdf.org/rdf/2011/keyword#phone";
 	private final Logger logger = LoggerFactory.getLogger(KeywordSail.class);
+	private boolean enabled = true;
 	private URI property;
 	private URI graph = null;
 	private Set<URI> labels;
@@ -87,6 +88,14 @@ public class KeywordSail extends SailWrapper {
 
 	public String toString() {
 		return getBaseSail().toString();
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
 	}
 
 	public URI getPhoneProperty() {
@@ -154,7 +163,9 @@ public class KeywordSail extends SailWrapper {
 				if (!isSameSettings(properties)) {
 					logger.info("Reindexing keywords in {}", this);
 					clear(properties);
-					reindex();
+					if (enabled) {
+						reindex();
+					}
 				}
 				saveSettings(dir);
 			}
@@ -164,12 +175,18 @@ public class KeywordSail extends SailWrapper {
 	}
 
 	@Override
-	public KeywordConnection getConnection() throws SailException {
-		return new KeywordConnection(this, super.getConnection(), helper);
+	public SailConnection getConnection() throws SailException {
+		if (enabled)
+			return getKeywordConnection();
+		return super.getConnection();
 	}
 
 	protected boolean isIndexedProperty(URI property) {
 		return labels.contains(property);
+	}
+
+	private KeywordConnection getKeywordConnection() throws SailException {
+		return new KeywordConnection(this, super.getConnection(), helper);
 	}
 
 	private Properties loadSettings(File dir) throws FileNotFoundException,
@@ -195,6 +212,8 @@ public class KeywordSail extends SailWrapper {
 				properties.getProperty("label")))
 			return false;
 		if (!property.stringValue().equals(properties.getProperty("property")))
+			return false;
+		if (enabled && "false".equals(properties.getProperty("enabled")))
 			return false;
 		if (graph == null)
 			return properties.getProperty("graph") == null;
@@ -224,7 +243,7 @@ public class KeywordSail extends SailWrapper {
 	}
 
 	private void reindex() throws SailException {
-		KeywordConnection con = getConnection();
+		KeywordConnection con = getKeywordConnection();
 		try {
 			for (URI pred : labels) {
 				CloseableIteration<? extends Statement, SailException> stmts;
@@ -250,6 +269,7 @@ public class KeywordSail extends SailWrapper {
 		properties.setProperty("phone", code);
 		properties.setProperty("label", Integer.toHexString(labels.hashCode()));
 		properties.setProperty("property", property.stringValue());
+		properties.setProperty("enabled", String.valueOf(enabled));
 		if (graph == null) {
 			properties.remove("graph");
 		} else {
