@@ -85,7 +85,12 @@ public class AuditingRepositoryFactory extends ContextAwareFactory {
 
 	protected AuditingRepository getAuditingRepository(
 			AuditingRepositoryConfig config) {
-		return new AuditingRepository();
+		AuditingRepository repo = new AuditingRepository();
+		repo.setMinRecent(config.getMinRecent());
+		repo.setMaxRecent(config.getMaxRecent());
+		repo.setPurgeAfter(config.getPurgeAfter());
+		repo.setTransactional(config.getTransactional());
+		return repo;
 	}
 
 }

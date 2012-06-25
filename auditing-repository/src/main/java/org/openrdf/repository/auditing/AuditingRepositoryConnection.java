@@ -69,32 +69,34 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private static final String RECENT_ACTIVITY = "http://www.openrdf.org/rdf/2012/auditing#RecentActivity";
 	private static final String WAS_INFORMED_BY = "http://www.w3.org/ns/prov#wasInformedBy";
 	private static final String USED = "http://www.w3.org/ns/prov#used";
-	private static final String DELETE_ACTIVITY = "PREFIX prov:<http://www.w3.org/ns/prov#>\n"
+	private static final String UPDATE_ACTIVITY = "PREFIX prov:<http://www.w3.org/ns/prov#>\n"
 			+ "DELETE {\n\t"
+			+ "?used prov:wasGeneratedBy ?generatedBy .\n\t"
 			+ "?entity prov:wasGeneratedBy ?generatedBy\n"
-			+ "} WHERE {\n\t"
-			+ "GRAPH $activity { $activity prov:used ?entity }\n\t"
-			+ "?entity prov:wasGeneratedBy ?generatedBy\n\t"
-			+ "FILTER (?generatedBy != $activity)\n"
-			+ "}";
-	private static final String INSERT_ACTIVITY = "PREFIX prov:<http://www.w3.org/ns/prov#>\n"
-			+ "INSERT {\n\t"
-			+ "GRAPH $activity { $activity prov:used ?entity }\n\t"
-			+ "GRAPH $activity { ?entity prov:wasGeneratedBy $activity }\n\t"
+			+ "} INSERT {\n\t"
 			+ "GRAPH $activity { ?used prov:wasGeneratedBy $activity }\n\t"
+			+ "GRAPH $activity { $activity prov:used ?entity }\n\t"
+			+ "GRAPH $activity { ?entity prov:wasGeneratedBy $activity }\n"
 			+ "} WHERE {\n\t"
 			+ "{\n\t\t"
+			+ "GRAPH $activity { $activity prov:used ?used }\n\t\t"
+			+ "?used prov:wasGeneratedBy ?generatedBy\n\t"
+			+ "} UNION {\n\t\t"
 			+ "GRAPH $activity { ?resource ?predicate ?object }\n\t\t"
 			+ "FILTER isIri(?resource)\n\t\t"
 			+ "FILTER ( !sameTerm($activity,?resource) )\n\t\t"
 			+ "BIND ( if( contains(str(?resource),\"#\"), iri(strbefore(str(?resource),\"#\")), ?resource ) AS ?entity)\n\t\t"
 			+ "FILTER ( !sameTerm($activity,?entity) )\n\t\t"
 			+ "OPTIONAL { ?entity prov:wasGeneratedBy ?generatedBy }\n\t"
-			+ "} UNION {\n\t\t"
-			+ "GRAPH $activity { $activity prov:used ?used }\n\t\t"
-			+ "?used prov:wasGeneratedBy ?generatedBy\n\t"
-			+ "}\n"
-			+ "}";
+			+ "}\n" + "}";
+	private static final String BALANCE_ACTIVITY = UPDATE_ACTIVITY.substring(0,
+			UPDATE_ACTIVITY.length() - 2)
+			+ "\n\t"
+			+ "FILTER (\n\t\t"
+			+ "!bound(?generatedBy) ||\n\t\t"
+			+ "EXISTS { $activity prov:wasInformedBy ?generatedBy } ||\n\t\t"
+			+ "EXISTS { $activity prov:endedAtTime ?after . ?generatedBy prov:endedAtTime ?before FILTER (?before < ?after) }\n\t"
+			+ ")\n" + "}";
 
 	private final AuditingRepository repository;
 	private final Map<URI, Set<URI>> modifiedGraphs = new HashMap<URI, Set<URI>>();
@@ -114,9 +116,9 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 
 	@Override
 	public void commit() throws RepositoryException {
-		Set<URI> recentActivities = closeActivityGraphs();
+		Set<URI> recentActivities = finalizeActivityGraphs();
 		super.commit();
-		getRepository().addRecentActivities(recentActivities);
+		closeActivityGraphs(recentActivities);
 	}
 
 	@Override
@@ -402,17 +404,19 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		}
 	}
 
-	private synchronized Set<URI> closeActivityGraphs()
+	private synchronized Set<URI> finalizeActivityGraphs()
 			throws RepositoryException {
 		Set<URI> recentActivities = uncommittedActivityGraphs;
+		int size = recentActivities.size();
+		uncommittedActivityGraphs = new LinkedHashSet<URI>(size);
 		for (URI activityGraph : recentActivities) {
 			Set<URI> graphs = modifiedGraphs.get(activityGraph);
 			Set<URI> entities = modifiedEntities.get(activityGraph);
 			addMetadata(activityGraph, entities, graphs);
-			finalizeActivityGraph(activityGraph);
+			if (getRepository().isTransactional()) {
+				finalizeActivityGraph(activityGraph);
+			}
 		}
-		int size = recentActivities.size();
-		uncommittedActivityGraphs = new LinkedHashSet<URI>(size);
 		modifiedGraphs.clear();
 		modifiedEntities.clear();
 		return recentActivities;
@@ -439,12 +443,31 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private void finalizeActivityGraph(URI activityGraph)
 			throws RepositoryException {
 		try {
-			// FIXME split up due to http://www.openrdf.org/issues/browse/SES-1047
-			Update update = prepareUpdate(SPARQL, INSERT_ACTIVITY);
+			Update update = prepareUpdate(SPARQL, UPDATE_ACTIVITY);
 			update.setBinding("activity", activityGraph);
 			update.setDataset(new DatasetImpl());
 			update.execute();
-			update = prepareUpdate(SPARQL, DELETE_ACTIVITY);
+		} catch (UpdateExecutionException e) {
+			throw new RepositoryException(e);
+		} catch (MalformedQueryException e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	private void closeActivityGraphs(Set<URI> recentActivities)
+			throws RepositoryException {
+		getRepository().addRecentActivities(recentActivities);
+		if (!getRepository().isTransactional()) {
+			for (URI activityGraph : recentActivities) {
+				balanceActivityGraph(activityGraph);
+			}
+		}
+	}
+
+	private void balanceActivityGraph(URI activityGraph)
+			throws RepositoryException {
+		try {
+			Update update = prepareUpdate(SPARQL, BALANCE_ACTIVITY);
 			update.setBinding("activity", activityGraph);
 			update.setDataset(new DatasetImpl());
 			update.execute();

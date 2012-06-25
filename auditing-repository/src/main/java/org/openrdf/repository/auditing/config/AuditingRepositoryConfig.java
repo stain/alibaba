@@ -31,6 +31,7 @@ package org.openrdf.repository.auditing.config;
 import static org.openrdf.repository.auditing.config.AuditingSchema.MAX_RECENT;
 import static org.openrdf.repository.auditing.config.AuditingSchema.MIN_RECENT;
 import static org.openrdf.repository.auditing.config.AuditingSchema.PURGE_AFTER;
+import static org.openrdf.repository.auditing.config.AuditingSchema.TRANSACTIONAL;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -52,6 +53,7 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 	private int minRecent;
 	private int maxRecent;
 	private Duration purgeAfter;
+	private Boolean transactional;
 
 	public int getMinRecent() {
 		return minRecent;
@@ -77,6 +79,14 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 		this.purgeAfter = purgeAfter;
 	}
 
+	public Boolean getTransactional() {
+		return transactional;
+	}
+
+	public void setTransactional(Boolean transactional) {
+		this.transactional = transactional;
+	}
+
 	@Override
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
@@ -86,6 +96,9 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 		if (purgeAfter != null) {
 			model.add(self, PURGE_AFTER,
 					vf.createLiteral(purgeAfter.toString(), XMLSchema.DURATION));
+		}
+		if (transactional != null) {
+			model.add(self, TRANSACTIONAL, vf.createLiteral(transactional));
 		}
 		return self;
 	}
@@ -111,6 +124,10 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 			} catch (DatatypeConfigurationException e) {
 				throw new RepositoryConfigException(e);
 			}
+		}
+		lit = model.filter(implNode, TRANSACTIONAL, null).objectLiteral();
+		if (lit != null) {
+			setTransactional(lit.booleanValue());
 		}
 	}
 

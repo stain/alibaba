@@ -43,9 +43,10 @@ public class AuditingSchema {
 	/** http://www.openrdf.org/config/sail/auditing# */
 	public static final String NAMESPACE = "http://www.openrdf.org/config/sail/auditing#";
 
-	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentTransactions");
-	public static final URI MAX_RECENT = new URIImpl(NAMESPACE + "maximumRecentTransactions");
-	public static final URI PURGE_AFTER = new URIImpl(NAMESPACE + "purgeObsoleteTransactionsAfter");
+	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentActivities");
+	public static final URI MAX_RECENT = new URIImpl(NAMESPACE + "maximumRecentActivities");
+	public static final URI PURGE_AFTER = new URIImpl(NAMESPACE + "purgeObsoleteActivitiesAfter");
+	public static final URI TRANSACTIONAL = new URIImpl(NAMESPACE + "isTransactional");
 
 	private AuditingSchema() {
 		// no constructor

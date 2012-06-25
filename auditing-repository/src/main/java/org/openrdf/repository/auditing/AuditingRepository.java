@@ -54,10 +54,13 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.Update;
 import org.openrdf.query.UpdateExecutionException;
+import org.openrdf.repository.DelegatingRepository;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
+import org.openrdf.repository.http.HTTPRepository;
+import org.openrdf.repository.sparql.SPARQLRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +80,13 @@ public class AuditingRepository extends ContextAwareRepository {
 			+ "} WHERE {\n\t"
 			+ "$activity a audit:RecentActivity\n\t"
 			+ "OPTIONAL {\n\t\t"
-			+ "{ BIND ($activity AS ?obsolete) } UNION { GRAPH $activity { $activity prov:wasInformedBy ?obsolete } }\n\t\t"
+			+ "{\n\t\t\t"
+			+ "BIND ($activity AS ?obsolete)\n\t\t"
+			+ "} UNION {\n\t\t\t"
+			+ "$activity prov:wasInformedBy ?obsolete\n\t\t"
+			+ "} UNION {\n\t\t\t"
+			+ "$activity prov:used ?entity . ?obsolete prov:used ?entity\n\t\t"
+			+ "}\n\t\t"
 			+ "FILTER NOT EXISTS { [prov:wasGeneratedBy ?obsolete] }\n\t"
 			+ "FILTER NOT EXISTS { GRAPH ?obsolete {\n\t\t\t"
 			+ "?s ?p ?o\n\t\t\t"
@@ -112,6 +121,7 @@ public class AuditingRepository extends ContextAwareRepository {
 	private long nextPurge = Long.MAX_VALUE;
 	private int minRecent;
 	private int maxRecent;
+	private Boolean transactional;
 	private ArrayDeque<URI> recent = new ArrayDeque<URI>(1024);
 
 	public AuditingRepository() {
@@ -168,6 +178,26 @@ public class AuditingRepository extends ContextAwareRepository {
 	 */
 	public void setMaxRecent(int maxRecent) {
 		this.maxRecent = maxRecent;
+	}
+
+	public boolean isTransactional() {
+		if (transactional != null)
+			return transactional;
+		Repository delegate = this;
+		while (delegate instanceof DelegatingRepository) {
+			if (!isTransactionSupported(delegate))
+				return false;
+			delegate = ((DelegatingRepository) delegate).getDelegate();
+		}
+		return true;
+	}
+
+	public Boolean getTransactional() {
+		return transactional;
+	}
+
+	public void setTransactional(Boolean transactional) {
+		this.transactional = transactional;
 	}
 
 	@Override
@@ -309,6 +339,10 @@ public class AuditingRepository extends ContextAwareRepository {
 			result.close();
 		}
 		return recentActivities;
+	}
+
+	private boolean isTransactionSupported(Repository delegate) {
+		return !(delegate instanceof HTTPRepository) && !(delegate instanceof SPARQLRepository);
 	}
 
 }
