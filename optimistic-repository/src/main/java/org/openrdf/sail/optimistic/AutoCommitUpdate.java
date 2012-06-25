@@ -11,21 +11,19 @@ import java.util.List;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.Update;
 import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.query.algebra.Load;
 import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.query.impl.AbstractOperation;
 import org.openrdf.query.parser.ParsedUpdate;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepositoryConnection;
+import org.openrdf.repository.sail.SailUpdate;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class AutoCommitUpdate extends AbstractOperation implements Update {
+class AutoCommitUpdate extends SailUpdate {
 
 	private final Logger logger = LoggerFactory.getLogger(AutoCommitUpdate.class);
 
@@ -34,39 +32,13 @@ class AutoCommitUpdate extends AbstractOperation implements Update {
 	private final AutoCommitRepositoryConnection con;
 
 	protected AutoCommitUpdate(ParsedUpdate parsedUpdate, AutoCommitRepositoryConnection con) {
+		super(parsedUpdate, con);
 		this.parsedUpdate = parsedUpdate;
 		this.con = con;
 	}
 
-	public ParsedUpdate getParsedUpdate() {
-		return parsedUpdate;
-	}
-
 	protected AutoCommitRepositoryConnection getConnection() {
 		return con;
-	}
-
-	/**
-	 * Gets the "active" dataset for this update. The active dataset is either
-	 * the dataset that has been specified using {@link #setDataset(Dataset)} or
-	 * the dataset that has been specified in the update, where the former takes
-	 * precedence over the latter.
-	 * 
-	 * @return The active dataset, or <tt>null</tt> if there is no dataset.
-	 */
-	public Dataset getActiveDataset() {
-		if (dataset != null) {
-			return dataset;
-		}
-
-		// No external dataset specified, use update operation's own dataset (if
-		// any)
-		return parsedUpdate.getDataset();
-	}
-
-	@Override
-	public String toString() {
-		return parsedUpdate.toString();
 	}
 
 	public void execute()

@@ -819,7 +819,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		ValueFactory vf = sail.getValueFactory();
 		InvalidTripleSource source = new InvalidTripleSource(vf);
 		EvaluationStrategyImpl strategy = new EvaluationStrategyImpl(source);
-		query = new QueryRoot(query.clone());
+		if (query instanceof QueryRoot) {
+			query = query.clone();
+		} else {
+			query = new QueryRoot(query.clone());
+		}
 		new BindingAssigner().optimize(query, dataset, bindings);
 		new ConstantOptimizer(strategy).optimize(query, dataset, bindings);
 		new CompareOptimizer().optimize(query, dataset, bindings);

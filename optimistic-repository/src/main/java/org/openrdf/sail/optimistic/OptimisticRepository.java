@@ -145,8 +145,8 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 	/* Override initialize(), shutdown() to support persistence */
 
 	@Override
-	public synchronized void initialize() throws RepositoryException {
-		super.initialize();
+	protected synchronized void initializeInternal() throws RepositoryException {
+		super.initializeInternal();
 
 		// persist stored named queries
 		File dataDir = getDataDir();
@@ -165,8 +165,8 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 	/* Desist all active named queries */
 
 	@Override
-	public synchronized void shutDown() throws RepositoryException {
-		super.shutDown();
+	protected synchronized void shutDownInternal() throws RepositoryException {
+		super.shutDownInternal();
 
 		// desist all named queries
 		File dataDir = getDataDir();

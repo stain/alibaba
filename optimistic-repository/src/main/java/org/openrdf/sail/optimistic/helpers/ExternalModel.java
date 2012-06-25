@@ -143,29 +143,37 @@ public class ExternalModel extends ExternalSet {
 	private Resource[] contexts(StatementPattern sp, Dataset dataset,
 			BindingSet bindings) {
 		Value contextValue = value(sp.getContextVar(), bindings);
-		if (dataset == null) {
-			if (contextValue != null)
-				return new Resource[] { (Resource) contextValue };
-			return new Resource[0];
-		}
-		Set<URI> graphs;
-		if (sp.getScope() == Scope.DEFAULT_CONTEXTS) {
-			graphs = dataset.getDefaultGraphs();
-		} else {
-			graphs = dataset.getNamedGraphs();
-		}
 
-		if (graphs.isEmpty()) {
+		Set<URI> graphs = null;
+		boolean emptyGraph = false;
+
+		if (dataset != null) {
+			if (sp.getScope() == Scope.DEFAULT_CONTEXTS) {
+				graphs = dataset.getDefaultGraphs();
+				emptyGraph = graphs.isEmpty() && !dataset.getNamedGraphs().isEmpty();
+			}
+			else {
+				graphs = dataset.getNamedGraphs();
+				emptyGraph = graphs.isEmpty() && !dataset.getDefaultGraphs().isEmpty();
+			}
+		}
+		if (emptyGraph) {
 			// Search zero contexts
 			return null;
 		}
-		if (contextValue == null)
-			return graphs.toArray(new Resource[graphs.size()]);
-		if (graphs.contains(contextValue)) {
-			return new Resource[] { (Resource) contextValue };
+
+		if (graphs == null || graphs.isEmpty()) {
+			// store default behaivour
+			if (contextValue != null)
+				return new Resource[] { (Resource)contextValue };
+			return new Resource[0];
 		}
-		// Statement pattern specifies a context that is not part of the dataset
-		return null;
+		if (contextValue != null) {
+			if (graphs.contains(contextValue))
+				return new Resource[] { (Resource)contextValue };
+			return null;
+		}
+		return graphs.toArray(new Resource[graphs.size()]);
 	}
 
 }
