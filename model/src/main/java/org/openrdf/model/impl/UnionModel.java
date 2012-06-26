@@ -24,7 +24,8 @@ public class UnionModel extends AbstractModel {
 		public boolean hasNext() {
 			if (iter == null) {
 				iter = models[++idx].iterator();
-			} else if (!iter.hasNext() && idx < models.length - 1) {
+			}
+			while (!iter.hasNext() && idx < models.length - 1) {
 				iter = models[++idx].iterator();
 			}
 			return iter.hasNext();
