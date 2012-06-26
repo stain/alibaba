@@ -42,7 +42,7 @@ import org.openrdf.query.impl.EmptyBindingSet;
 public class EvaluateOperation {
 	private TupleExpr qry;
 	private Dataset dataset;
-	private BindingSet bindings = EmptyBindingSet.getInstance();;
+	private BindingSet bindings = EmptyBindingSet.getInstance();
 	private boolean inf;
 
 	public EvaluateOperation(Dataset dataset, TupleExpr expr,
