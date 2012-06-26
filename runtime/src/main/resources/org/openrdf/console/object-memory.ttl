@@ -20,9 +20,10 @@
       rep:repositoryType "openrdf:ObjectRepository" ;
 	  rep:delegate [
 	      rep:repositoryType "openrdf:AuditingRepository" ;
-	      audit:purgeObsoleteTransactionsAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
-	      audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
-	      audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
+	      audit:purgeObsoleteActivitiesAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
+	      audit:minimumRecentActivities {%Minimum recent transactions|100%} ;
+	      audit:maximumRecentActivities {%Maximum recent transactions|1000%} ;
+	      audit:isTransactional true ;
 	      rep:delegate [
 	         rep:repositoryType "openrdf:OptimisticRepository" ;
 	         opt:snapshot {%Rollback if multiple states observed (enforce snapshot)?|false|true%} ;
