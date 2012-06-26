@@ -35,7 +35,6 @@ import info.aduna.concurrent.locks.Lock;
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.CloseableIteratorIteration;
 import info.aduna.iteration.FilterIteration;
-import info.aduna.iteration.IterationWrapper;
 import info.aduna.iteration.UnionIteration;
 
 import java.util.ArrayList;
@@ -203,12 +202,12 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 	}
 
 	/** locked by this */
-	public MemoryOverflowModel getAddedModel() {
+	public Model getAddedModel() {
 		return added;
 	}
 
 	/** locked by this */
-	public MemoryOverflowModel getRemovedModel() {
+	public Model getRemovedModel() {
 		return removed;
 	}
 
@@ -284,8 +283,8 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 					prepare();
 				}
 				if (isReadSnapshot() && sail.isListenerPresent()) {
-					event.setAddedModel(added);
-					event.setRemovedModel(removed);
+					event.setAddedModel(getAddedModel());
+					event.setRemovedModel(getRemovedModel());
 				}
 				flush();
 				super.commit();
@@ -545,9 +544,9 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 		try {
 			synchronized (this) {
 				read(null, null, null, true, contexts);
-				int rsize = removed.filter(null, null, null, contexts).size();
-				int asize = added.filter(null, null, null, contexts).size();
-				return size - rsize + asize;
+				Model removed = getRemovedModel().filter(null, null, null, contexts);
+				Model added = getAddedModel().filter(null, null, null, contexts);
+				return size - removed.size() + added.size();
 			}
 		} finally {
 			lock.release();
@@ -566,8 +565,8 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 		try {
 			synchronized (this) {
 				read(subj, pred, obj, inf, contexts);
-				Model excluded = removed.filter(subj, pred, obj, contexts);
-				Model included = added.filter(subj, pred, obj, contexts);
+				Model excluded = getRemovedModel().filter(subj, pred, obj, contexts);
+				Model included = getAddedModel().filter(subj, pred, obj, contexts);
 				if (included.isEmpty() && excluded.isEmpty())
 					return result;
 				if (!excluded.isEmpty()) {
@@ -579,11 +578,6 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 								throws SailException {
 							return !set.contains(stmt);
 						}
-
-						protected void handleClose() throws SailException {
-							super.handleClose();
-							set.release();
-						}
 					};
 				}
 				final MemoryOverflowModel set;
@@ -591,13 +585,7 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 				final Iterator<Statement> iter = set.iterator();
 				CloseableIteration<Statement, SailException> incl;
 				incl = new CloseableIteratorIteration<Statement, SailException>(
-						iter) {
-					protected void handleClose() throws SailException {
-						super.handleClose();
-						set.closeIterator(iter);
-						set.release();
-					}
-				};
+						iter);
 				return new UnionIteration<Statement, SailException>(incl,result);
 			}
 		} finally {
@@ -645,6 +633,8 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 		Lock lock = sail.getReadLock();
 		try {
 			synchronized (this) {
+				Model added = getAddedModel();
+				Model removed = getRemovedModel();
 				if (added.isEmpty() && removed.isEmpty()) {
 					merger = null;
 				} else {
@@ -667,18 +657,7 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 		} finally {
 			lock.release();
 		}
-		if (merger == null)
-			return result;
-		return new IterationWrapper<BindingSet, QueryEvaluationException>(
-				result) {
-			protected void handleClose() throws QueryEvaluationException {
-				try {
-					super.handleClose();
-				} finally {
-					merger.close();
-				}
-			}
-		};
+		return result;
 	}
 
 	void checkForReadConflict() throws SailException {
@@ -705,6 +684,7 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 			delegate.clear(removedContexts.toArray(new Resource[removedContexts.size()]));
 			removedContexts.clear();
 		}
+		Model removed = getRemovedModel();
 		if (!removed.isEmpty()) {
 			for (Statement st : removed) {
 				delegate.removeStatements(st.getSubject(), st.getPredicate(),
@@ -712,6 +692,7 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 			}
 		}
 		addedContexts.clear();
+		Model added = getAddedModel();
 		if (!added.isEmpty()) {
 			for (Statement st : added) {
 				delegate.addStatement(st.getSubject(), st.getPredicate(), st
@@ -796,16 +777,16 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 	 * Checks this change to see if it is inconsistent with the observed state
 	 * of the store.
 	 */
-	void changed(MemoryOverflowModel added, MemoryOverflowModel removed)
+	void changed(Model added, Model removed)
 			throws SailException {
 		synchronized (observations) {
 			for (EvaluateOperation op : observations) {
 				if (!added.isEmpty() && sail.effects(added, op)) {
-					ConcurrencyException inc = inconsistency(added, op);
+					ConcurrencyException inc = inconsistency(op);
 					changes.add(new InconsistentChange(added, removed, inc));
 					break;
 				} else if (!removed.isEmpty() && sail.effects(removed, op)) {
-					ConcurrencyException inc = inconsistency(removed, op);
+					ConcurrencyException inc = inconsistency(op);
 					changes.add(new InconsistentChange(added, removed, inc));
 					break;
 				}
@@ -813,8 +794,8 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 		}
 	}
 
-	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
-		return new ConcurrencyException("Observed State has Changed", op, delta);
+	private ConcurrencyException inconsistency(EvaluateOperation op) {
+		return new ConcurrencyException("Observed State has Changed", op);
 	}
 
 	private synchronized void setStatementsAdded() {
@@ -852,8 +833,6 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 	}
 
 	private void resetChangeModel() {
-		added.release();
-		removed.release();
 		added = new MemoryOverflowModel();
 		removed = new MemoryOverflowModel();
 	}
@@ -861,9 +840,6 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 	private void releaseObservedChange() {
 		synchronized (observations) {
 			observations.clear();
-			for (InconsistentChange change : changes) {
-				change.release();
-			}
 			changes.clear();
 		}
 	}
@@ -892,26 +868,25 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 	/**
 	 * Searches for observations that observed a subsequent state change of the store
 	 */
-	private ConcurrencyException detectPhantomRead(LinkedList<InconsistentChange> changesets) throws SailException {
-		for (InconsistentChange cs : changesets) {
+	private ConcurrencyException detectPhantomRead(LinkedList<InconsistentChange> changes) throws SailException {
+		for (InconsistentChange cs : changes) {
 			Model added = cs.getAdded();
 			Model removed = cs.getRemoved();
 			for (EvaluateOperation op : cs.getSubsequentObservations()) {
 				if (!added.isEmpty() && sail.effects(added, op)) {
-					return phantom(added, op, cs.getInconsistency());
+					return phantom(op, cs.getInconsistency());
 				}
 				if (!removed.isEmpty() && sail.effects(removed, op)) {
-					return phantom(removed, op, cs.getInconsistency());
+					return phantom(op, cs.getInconsistency());
 				}
 			}
 		}
 		return null;
 	}
 
-	private ConcurrencyException phantom(Model delta, EvaluateOperation op,
-			ConcurrencyException cause) {
+	private ConcurrencyException phantom(EvaluateOperation op, ConcurrencyException cause) {
 		return new ConcurrencyException("Observed Inconsistent State", op,
-				delta, cause);
+				cause);
 	}
 
 	/** locked by this */

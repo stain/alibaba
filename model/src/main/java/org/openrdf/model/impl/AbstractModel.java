@@ -50,6 +50,10 @@ abstract class AbstractModel extends AbstractSet<Statement> implements
 		Model {
 	private static final long serialVersionUID = 4254119331281455614L;
 
+	public Model unmodifiable() {
+		return new UnmodifiableModel(this);
+	}
+
 	@Override
 	public boolean add(Statement st) {
 		return add(st.getSubject(), st.getPredicate(), st.getObject(),

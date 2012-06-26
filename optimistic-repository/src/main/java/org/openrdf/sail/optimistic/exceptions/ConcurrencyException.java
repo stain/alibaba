@@ -28,7 +28,6 @@
  */
 package org.openrdf.sail.optimistic.exceptions;
 
-import org.openrdf.model.Model;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
@@ -45,12 +44,12 @@ public class ConcurrencyException extends RepositoryException {
 		super(cause.getMessage(), cause);
 	}
 
-	public ConcurrencyException(String msg, EvaluateOperation op, Model removed) {
+	public ConcurrencyException(String msg, EvaluateOperation op) {
 		super(msg + "\n" + op.toString());
 	}
 
 	public ConcurrencyException(String msg, EvaluateOperation op,
-			Model removed, ConcurrencyException cause) {
+			ConcurrencyException cause) {
 		super(msg + "\n" + op.toString(), cause);
 	}
 

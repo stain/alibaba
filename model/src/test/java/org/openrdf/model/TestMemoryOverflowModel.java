@@ -37,6 +37,5 @@ public class TestMemoryOverflowModel extends TestModel {
 			model.add(new StatementImpl(vf.createBNode(), vf
 					.createURI("urn:test:pred"), vf.createBNode()));
 		}
-		model.release();
 	}
 }

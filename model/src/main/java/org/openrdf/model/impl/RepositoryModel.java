@@ -28,6 +28,8 @@
  */
 package org.openrdf.model.impl;
 
+import info.aduna.iteration.CloseableIteration;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -52,10 +54,10 @@ import org.openrdf.repository.RepositoryResult;
  */
 public class RepositoryModel extends AbstractModel {
 	private final class StatementIterator implements Iterator<Statement> {
-		private final RepositoryResult<Statement> stmts;
+		private final CloseableIteration<Statement, RepositoryException> stmts;
 		private Statement last;
 
-		private StatementIterator(RepositoryResult<Statement> stmts) {
+		private StatementIterator(CloseableIteration<Statement, RepositoryException> stmts) {
 			this.stmts = stmts;
 		}
 

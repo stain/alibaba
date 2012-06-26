@@ -134,12 +134,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 		return super.getWrappedConnection();
 	}
 
-	@Override
-	public void close() throws SailException {
-		super.close();
-		metadata.release();
-	}
-
 	public synchronized URI getTransactionURI() throws SailException {
 		return getTrx();
 	}

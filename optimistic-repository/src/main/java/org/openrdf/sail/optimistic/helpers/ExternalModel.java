@@ -29,8 +29,10 @@
 package org.openrdf.sail.optimistic.helpers;
 
 import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
 import info.aduna.iteration.EmptyIteration;
 
+import java.util.Iterator;
 import java.util.Set;
 
 import org.openrdf.model.Model;
@@ -38,8 +40,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.EmptyModel;
-import org.openrdf.model.impl.ModelIteration;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
@@ -85,7 +86,7 @@ public class ExternalModel extends ExternalSet {
 		Value obj = value(sp.getObjectVar(), bindings);
 		Resource[] contexts = contexts(sp, dataset, bindings);
 		if (contexts == null)
-			return new EmptyModel(model);
+			return new LinkedHashModel(model.getNamespaces());
 
 		return model.filter(subj, pred, obj, contexts);
 	}
@@ -114,7 +115,8 @@ public class ExternalModel extends ExternalSet {
 			if (contexts == null)
 				return new EmptyIteration<BindingSet, QueryEvaluationException>();
 
-			stIter = new ModelIteration(filter(model, bindings));
+			Iterator<Statement> iter = filter(model, bindings).iterator();
+			stIter = new CloseableIteratorIteration<Statement, QueryEvaluationException>(iter);
 
 			if (contexts.length == 0 && sp.getScope() == Scope.NAMED_CONTEXTS) {
 				stIter = new NamedContextCursor(stIter);

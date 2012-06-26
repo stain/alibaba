@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.Model;
-import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
@@ -43,14 +42,14 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
  * 
  */
 public class InconsistentChange {
-	private final MemoryOverflowModel added;
-	private final MemoryOverflowModel removed;
+	private final Model added;
+	private final Model removed;
 	private final ConcurrencyException inconsistency;
 	private final Set<EvaluateOperation> subsequentObservations = new HashSet<EvaluateOperation>();
 
-	public InconsistentChange(MemoryOverflowModel added, MemoryOverflowModel removed, ConcurrencyException inconsistency) {
-		this.added = added.open();
-		this.removed = removed.open();
+	public InconsistentChange(Model added, Model removed, ConcurrencyException inconsistency) {
+		this.added = added.unmodifiable();
+		this.removed = removed.unmodifiable();
 		this.inconsistency = inconsistency;
 	}
 
@@ -72,10 +71,5 @@ public class InconsistentChange {
 
 	public void addObservation(EvaluateOperation op) {
 		subsequentObservations.add(op);
-	}
-
-	public void release() {
-		added.release();
-		removed.release();
 	}
 }

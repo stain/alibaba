@@ -42,7 +42,6 @@ import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.QueryRoot;
@@ -195,8 +194,8 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
 		synchronized (prepared) {
-			MemoryOverflowModel added = prepared.getAddedModel();
-			MemoryOverflowModel removed = prepared.getRemovedModel();
+			Model added = prepared.getAddedModel();
+			Model removed = prepared.getRemovedModel();
 			if (added.isEmpty() && removed.isEmpty())
 				return;
 			for (OptimisticConnection con : transactions.keySet()) {
@@ -263,34 +262,30 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		QueryBindingSet additional = new QueryBindingSet();
 		additional.addBinding(DELTA_VARNAME, vf.createLiteral(true));
 		DeltaMerger merger = new DeltaMerger(delta, additional);
+		merger.optimize(query, op.getDataset(), bindings);
+		if (!merger.isModified())
+			return false;
+	
+		// open local connection for this transaction if required
+		SailConnection localCon = super.getConnection() ;
 		try {
-			merger.optimize(query, op.getDataset(), bindings);
-			if (!merger.isModified())
-				return false;
-		
-			// open local connection for this transaction if required
-			SailConnection localCon = super.getConnection() ;
+			CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
+			result = localCon.evaluate(query, op.getDataset(), bindings, inf);
 			try {
-				CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
-				result = localCon.evaluate(query, op.getDataset(), bindings, inf);
 				try {
-					try {
-						while (result.hasNext()) {
-							if (result.next().hasBinding(DELTA_VARNAME))
-								return true;
-						}
-						return false;
-					} finally {
-						result.close();
+					while (result.hasNext()) {
+						if (result.next().hasBinding(DELTA_VARNAME))
+							return true;
 					}
-				} catch (QueryEvaluationException e) {
-					throw new SailException(e);
+					return false;
+				} finally {
+					result.close();
 				}
-			} finally {
-				localCon.close();
+			} catch (QueryEvaluationException e) {
+				throw new SailException(e);
 			}
 		} finally {
-			merger.close();
+			localCon.close();
 		}
 	}
 	

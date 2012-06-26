@@ -72,7 +72,6 @@ public class MemoryOverflowModel extends AbstractModel {
 	private RepositoryModel disk;
 	private long baseline = 0;
 	private long maxBlockSize = 0;
-	private int opened;
 
 	public MemoryOverflowModel() {
 		memory = new LinkedHashModel();
@@ -101,38 +100,12 @@ public class MemoryOverflowModel extends AbstractModel {
 		memory = new LinkedHashModel(namespaces, size);
 	}
 
-	public synchronized MemoryOverflowModel open() {
-		opened++;
-		return this;
-	}
-
-	public synchronized void release() {
-		opened--;
-		if (opened < 0) {
-			memory = new LinkedHashModel(memory.getNamespaces());
-			if (repository != null) {
-				try {
-					if (connection != null) {
-						connection.commit();
-						connection.close();
-					}
-					repository.shutDown();
-				} catch (RepositoryException e) {
-					logger.error(e.toString(), e);
-				} finally {
-					FileUtil.deltree(repository.getDataDir());
-					repository = null;
-					connection = null;
-					disk = null;
-				}
-			}
-		}
-	}
-
 	@Override
 	public synchronized void closeIterator(Iterator<?> iter) {
 		super.closeIterator(iter);
-		if (disk != null) {
+		if (disk == null) {
+			memory.closeIterator(iter);
+		} else {
 			disk.closeIterator(iter);
 		}
 	}
@@ -266,10 +239,33 @@ public class MemoryOverflowModel extends AbstractModel {
 
 	private synchronized void overflowToDisk() {
 		try {
+			assert disk == null;
 			repository = createRepository();
 			connection = repository.getConnection();
 			connection.setAutoCommit(false);
-			disk = new RepositoryModel(connection);
+			disk = new RepositoryModel(connection) {
+
+				@Override
+				protected void finalize() throws Throwable {
+					if (disk == this) {
+						try {
+							if (connection != null) {
+								connection.commit();
+								connection.close();
+							}
+							repository.shutDown();
+						} catch (RepositoryException e) {
+							logger.error(e.toString(), e);
+						} finally {
+							FileUtil.deltree(repository.getDataDir());
+							repository = null;
+							connection = null;
+							disk = null;
+						}
+					}
+					super.finalize();
+				}
+			};
 			disk.addAll(memory);
 			memory = new LinkedHashModel(memory.getNamespaces());
 		} catch (IOException e) {

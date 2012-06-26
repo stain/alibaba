@@ -46,10 +46,10 @@ import org.openrdf.model.Value;
  * @author James Leigh
  * 
  */
-public class EmptyModel extends AbstractModel {
-	private final Model model;
+class EmptyModel extends AbstractModel {
+	private final AbstractModel model;
 
-	public EmptyModel(Model model) {
+	public EmptyModel(AbstractModel model) {
 		this.model = model;
 	}
 

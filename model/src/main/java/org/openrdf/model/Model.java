@@ -20,6 +20,18 @@ import org.openrdf.model.util.ModelException;
 public interface Model extends Set<Statement>, Serializable {
 
 	/**
+	 * Returns an unmodifiable view of this model. This method provides
+	 * "read-only" access to this model. Query operations on the returned model
+	 * "read through" to this model, and attempts to modify the returned model,
+	 * whether direct or via its iterator, result in an
+	 * <tt>UnsupportedOperationException</tt>.
+	 * <p>
+	 * 
+	 * @return an unmodifiable view of the specified set.
+	 */
+	public Model unmodifiable();
+
+	/**
 	 * Gets the map that contains the assigned namespaces.
 	 * 
 	 * @return Map of prefix to namespace

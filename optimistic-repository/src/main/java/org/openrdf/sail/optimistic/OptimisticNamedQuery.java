@@ -164,12 +164,13 @@ class OptimisticNamedQuery implements NamedQuery, SailChangedListener {
 		if (event instanceof SailChangeSetEvent) {
 			SailChangeSetEvent e = (SailChangeSetEvent) event;
 
+			Model added = e.getAddedModel();
+			Model removed = e.getRemovedModel();
 			// in exclusive mode no change sets are generated
-			if (e.getAddedModel() == null || e.getRemovedModel() == null) {
+			if (added == null || removed == null) {
 				update(e.getTime());
 			} else if (e.getSail() instanceof OptimisticSail) {
-				if (conflicts(e.getAddedModel(), e.getRemovedModel(),
-						(OptimisticSail) e.getSail())) {
+				if (conflicts(added, removed, (OptimisticSail) e.getSail())) {
 					update(e.getTime());
 				}
 			}

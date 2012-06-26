@@ -28,9 +28,6 @@
  */
 package org.openrdf.sail.optimistic.helpers;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
 import org.openrdf.model.Model;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.MemoryOverflowModel;
@@ -56,32 +53,20 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 	private final Model removed;
 	private Dataset dataset;
 	private BindingSet bindings;
-	private BindingSet additional;
+	private final BindingSet additional;
 	private boolean modified;
 	private int varCount;
-	private final Collection<MemoryOverflowModel> open;
 
 	public DeltaMerger(Model added, Model removed) {
 		this.added = added;
 		this.removed = removed;
-		this.open = new LinkedList<MemoryOverflowModel>();
+		this.additional = null;
 	}
 
-	public DeltaMerger(Model added,
-			BindingSet additional) {
+	public DeltaMerger(Model added, BindingSet additional) {
 		this.added = added;
 		this.removed = new LinkedHashModel();
 		this.additional = additional;
-		this.open = null;
-	}
-
-	public synchronized void close() {
-		if (open != null) {
-			for (MemoryOverflowModel model : open) {
-				model.release();
-			}
-			open.clear();
-		}
 	}
 
 	public boolean isModified() {
@@ -127,16 +112,15 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 	}
 
 	private synchronized Model open(Model filtered) {
-		if (open == null)
-			return filtered;
-		MemoryOverflowModel model = new MemoryOverflowModel(filtered);
-		if (model.isEmpty()) {
-			model.release();
-			return new LinkedHashModel();
+		Model model;
+		if (additional == null) {
+			model = new MemoryOverflowModel(filtered);
 		} else {
-			open.add(model);
-			return model;
+			model = filtered;
 		}
+		if (model.isEmpty())
+			return new LinkedHashModel();
+		return model;
 	}
 
 	private synchronized Var newVar() {

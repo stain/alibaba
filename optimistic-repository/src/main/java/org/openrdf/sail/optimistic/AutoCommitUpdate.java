@@ -8,12 +8,15 @@ package org.openrdf.sail.optimistic;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
+import org.openrdf.query.Dataset;
 import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.query.algebra.Load;
 import org.openrdf.query.algebra.UpdateExpr;
+import org.openrdf.query.impl.FallbackDataset;
 import org.openrdf.query.parser.ParsedUpdate;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepositoryConnection;
@@ -46,6 +49,7 @@ class AutoCommitUpdate extends SailUpdate {
 	{
 
 		List<UpdateExpr> updateExprs = parsedUpdate.getUpdateExprs();
+		Map<UpdateExpr, Dataset> datasetMapping = parsedUpdate.getDatasetMapping();
 
 		for (UpdateExpr updateExpr : updateExprs) {
 			// LOAD is handled at the Repository API level because it requires
@@ -79,10 +83,13 @@ class AutoCommitUpdate extends SailUpdate {
 				// pass update operation to the SAIL.
 				SailConnection conn = getConnection().getSailConnection();
 
+				// explicitly set dataset on the SailUpdate takes precedence over declaration in the update itself.
+				Dataset activeDataset = FallbackDataset.fallback(dataset, datasetMapping.get(updateExpr));
+
 				try {
 					getConnection().autoBegin();
 					try {
-						conn.executeUpdate(updateExpr, getActiveDataset(), getBindings(), true);
+						conn.executeUpdate(updateExpr, activeDataset, getBindings(), true);
 						getConnection().autoCommit();
 					} catch (RepositoryException e) {
 						getConnection().autoRollback();
