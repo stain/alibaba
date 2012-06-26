@@ -64,21 +64,19 @@ import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.UpdateExpr;
-import org.openrdf.query.algebra.Var;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.auditing.helpers.BasicGraphPatternVisitor;
+import org.openrdf.sail.auditing.helpers.OperationEntityResolver;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
+import org.openrdf.sail.optimistic.TransactionalSailConnectionWrapper;
 
 /**
  * Intercepts the add and remove operations and add a revision to each resource.
  */
-public class AuditingConnection extends SailConnectionWrapper {
+public class AuditingConnection extends TransactionalSailConnectionWrapper {
 	private static final String AUDIT_2012 = "http://www.openrdf.org/rdf/2012/auditing#";
 	private static final String PROV = "http://www.w3.org/ns/prov#";
 	private static final String WAS_INFORMED_BY = PROV + "wasInformedBy";
@@ -102,6 +100,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private final Set<Resource> modified = new HashSet<Resource>();
 	private final MemoryOverflowModel metadata = new MemoryOverflowModel();
 	private final List<Statement> arch = new ArrayList<Statement>();
+	private final OperationEntityResolver entityResolver;
 	private Set<? extends Resource> predecessors;
 	private final URI currentTrx;
 	private final URI informedBy;
@@ -118,6 +117,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		this.sail = sail;
 		factory = DatatypeFactory.newInstance();
 		vf = sail.getValueFactory();
+		entityResolver = new OperationEntityResolver(vf);
 		currentTrx = vf.createURI(CURRENT_TRX.stringValue());
 		this.predecessors = predecessors;
 		informedBy = vf.createURI(WAS_INFORMED_BY);
@@ -144,7 +144,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		SailConnection remover = this;
 		final URI activity = ds == null ? null : ds.getDefaultInsertGraph();
 		if (activity != null) {
-			final URI entity = getOperationEntity(updateExpr, ds, bindings);
+			final URI entity = entityResolver.getEntity(updateExpr, ds, bindings);
 			remover = new SailConnectionWrapper(this) {
 				public void removeStatements(Resource subj, URI pred,
 						Value obj, Resource... ctx) throws SailException {
@@ -154,6 +154,26 @@ public class AuditingConnection extends SailConnectionWrapper {
 		}
 		SailUpdateExecutor executor = new SailUpdateExecutor(remover, vf, false);
 		executor.executeUpdate(updateExpr, ds, bindings, includeInferred);
+	}
+
+	@Override
+	public void executeInsert(UpdateExpr updateExpr, Dataset ds,
+			BindingSet bindings, Resource subj, URI pred, Value obj,
+			Resource... ctx) throws SailException {
+		addStatement(subj, pred, obj, ctx);
+	}
+
+	@Override
+	public void executeDelete(UpdateExpr updateExpr, Dataset ds,
+			BindingSet bindings, Resource subj, URI pred, Value obj,
+			Resource... ctx) throws SailException {
+		URI activity = ds == null ? null : ds.getDefaultInsertGraph();
+		if (activity == null) {
+			removeStatements(subj, pred, obj, ctx);
+		} else {
+			URI entity = entityResolver.getEntity(updateExpr, ds, bindings);
+			removeInforming(activity, entity, subj, pred, obj, ctx);
+		}
 	}
 
 	@Override
@@ -487,43 +507,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 		return true;
 	}
 
-	private URI getOperationEntity(UpdateExpr updateExpr, Dataset dataset, BindingSet bindings) {
-		if (dataset == null)
-			return null;
-		URI activity = dataset.getDefaultInsertGraph();
-		if (activity == null || activity.stringValue().indexOf('#') >= 0)
-			return null;
-		final Set<Var> subjects = new HashSet<Var>();
-		final Set<Var> objects = new HashSet<Var>();
-		try {
-			updateExpr.visit(new BasicGraphPatternVisitor() {
-				public void meet(StatementPattern node) {
-					subjects.add(node.getSubjectVar());
-					objects.add(node.getObjectVar());
-				}
-			});
-		} catch (QueryEvaluationException e) {
-			throw new AssertionError(e);
-		}
-		URI entity = null;
-		for (Var var : subjects) {
-			Value subj = var.getValue();
-			if (subj == null) {
-				subj = bindings.getValue(var.getName());
-			}
-			if (subj instanceof URI) {
-				if (entity == null) {
-					entity = entity((URI) subj);
-				} else if (!entity.equals(entity((URI) subj))) {
-					return null;
-				}
-			} else if (!objects.contains(var)) {
-				return null;
-			}
-		}
-		return entity;
-	}
-
 	private void removeInforming(URI activity, URI entity, Resource subj, URI pred,
 			Value obj, Resource... contexts) throws SailException {
 		if (contexts != null && contexts.length == 0) {
@@ -579,14 +562,5 @@ public class AuditingConnection extends SailConnectionWrapper {
 
 	private String hash(Resource ctx, Resource entity) {
 		return Integer.toHexString(31 * ctx.hashCode() + entity.hashCode());
-	}
-
-	private URI entity(URI subject) {
-		URI entity = subject;
-		int hash = entity.stringValue().indexOf('#');
-		if (hash > 0) {
-			entity = vf.createURI(entity.stringValue().substring(0, hash));
-		}
-		return entity;
 	}
 }

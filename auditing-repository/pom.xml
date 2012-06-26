@@ -44,10 +44,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
-			<artifactId>alibaba-repository-optimistic</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.openrdf.alibaba</groupId>
 			<artifactId>alibaba-sail-auditing</artifactId>
 			<scope>test</scope>
 		</dependency>
