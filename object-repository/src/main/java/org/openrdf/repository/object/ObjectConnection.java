@@ -54,7 +54,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.BlobConflictException;
 import org.openrdf.repository.object.exceptions.BlobStoreException;
@@ -63,15 +62,8 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.repository.sail.SailRepositoryConnection;
 import org.openrdf.result.Result;
 import org.openrdf.result.impl.ResultImpl;
-import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.SailException;
-import org.openrdf.sail.auditing.AuditingConnection;
-import org.openrdf.sail.auditing.AuditingSail;
-import org.openrdf.sail.auditing.vocabulary.Audit;
-import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 import org.openrdf.store.blob.BlobVersion;
@@ -103,6 +95,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	private final Set<Resource> merged = new HashSet<Resource>();
 	private final Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
 	private final BlobStore blobs;
+	private URI activityURI;
 	private BlobVersion blobVersion;
 
 	protected ObjectConnection(ObjectRepository repository,
@@ -123,25 +116,32 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * A unique identifier for this transaction if available, or
-	 * {@link Audit#CURRENT_TRX}. The default implementation requires a a
-	 * {@link AuditingSail} in the sail stack to return a unique value.
+	 * An identifier for this connection if assigned, or null.
 	 * 
-	 * @return unique {@link URI} representing the current transaction or
-	 *         {@link Audit#CURRENT_TRX}
-	 * @throws RepositoryException
+	 * @return a {@link URI} representing the current connection or null
 	 */
-	public URI getActivityURI() throws RepositoryException {
-		URI uri = findConnectionVersion(this);
-		if (uri == null)
-			return Audit.CURRENT_TRX;
-		return uri;
+	public URI getActivityURI() {
+		return activityURI;
+	}
+
+	/**
+	 * Assigns an activity URI to this connection to be used for new blob
+	 * versions and the default insert graph.
+	 * 
+	 * @param activity
+	 *            a unique URI
+	 */
+	public void setActivityURI(URI activity) {
+		activityURI = activity;
+		if (null == getInsertContext()) {
+			setInsertContext(activity);
+		}
 	}
 
 	public String toString() {
 		try {
 			URI uri = getActivityURI();
-			if (uri == null || Audit.CURRENT_TRX.equals(uri))
+			if (uri == null)
 				return getDelegate().toString();
 			return uri.stringValue();
 		} catch (RepositoryException e) {
@@ -614,7 +614,7 @@ public class ObjectConnection extends ContextAwareConnection {
 				return blobs.open(uri);
 			} else if (blobVersion == null) {
 				URI version = getActivityURI();
-				if (version == null || version == Audit.CURRENT_TRX) {
+				if (version == null) {
 					blobVersion = blobs.newVersion();
 				} else {
 					blobVersion = blobs.newVersion(version.stringValue());
@@ -673,29 +673,6 @@ public class ObjectConnection extends ContextAwareConnection {
 			map.put(length, query);
 			return query;
 		}
-	}
-
-	private URI findConnectionVersion(RepositoryConnection con) throws RepositoryException {
-		if (con instanceof RepositoryConnectionWrapper) {
-			return findConnectionVersion(((RepositoryConnectionWrapper) con).getDelegate());
-		} else if (con instanceof SailRepositoryConnection) {
-			SailConnection sail = ((SailRepositoryConnection) con).getSailConnection();
-			try {
-				return findConnectionVersion(sail);
-			} catch (SailException e) {
-				throw new RepositoryException(e);
-			}
-		}
-		return null;
-	}
-
-	private URI findConnectionVersion(SailConnection con) throws SailException {
-		if (con instanceof AuditingConnection) {
-			return ((AuditingConnection) con).getTransactionURI();
-		} else if (con instanceof SailConnectionWrapper) {
-			return findConnectionVersion(((SailConnectionWrapper) con).getWrappedConnection());
-		}
-		return null;
 	}
 
 	private Resource findResource(Object object) {
