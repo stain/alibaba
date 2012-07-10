@@ -20,6 +20,7 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.sail.SailRepository;
@@ -64,16 +65,10 @@ public class AuditingRecentTest extends TestCase {
 	private void begin(AuditingRepositoryConnection conn)
 			throws RepositoryException {
 		conn.setAutoCommit(false);
-		lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
-		conn.setInsertContext(lastActivity);
 	}
 
 	private AuditingRepositoryConnection commit(AuditingRepository repo,AuditingRepositoryConnection conn)
 			throws Exception {
-		DatatypeFactory df = DatatypeFactory.newInstance();
-		XMLGregorianCalendar now = df.newXMLGregorianCalendar(new GregorianCalendar());
-		conn.add(lastActivity, ENDED_AT, vf.createLiteral(now), lastActivity);
-		conn.add(lastActivity, RDF.TYPE, ACTIVITY, lastActivity);
 		conn.setAutoCommit(true);
 		conn.close();
 		return repo.getConnection();
@@ -90,6 +85,24 @@ public class AuditingRecentTest extends TestCase {
 		sail = new AuditingSail(sail);
 		Repository r = new SailRepository(sail);
 		repo = new AuditingRepository(r);
+		final DatatypeFactory df = DatatypeFactory.newInstance();
+		repo.setActivityFactory(new ActivityFactory() {
+			
+			public URI assignActivityURI(AuditingRepositoryConnection con) {
+				return lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
+			}
+			
+			public void activityEnded(URI activityGraph,
+					RepositoryConnection con) throws RepositoryException {
+				XMLGregorianCalendar now = df.newXMLGregorianCalendar(new GregorianCalendar());
+				con.add(activityGraph, ENDED_AT, vf.createLiteral(now), activityGraph);
+			}
+
+			public void activityStarted(URI activityGraph,
+					RepositoryConnection con) throws RepositoryException {
+				con.add(activityGraph, RDF.TYPE, ACTIVITY, activityGraph);
+			}
+		});
 		repo.setMinRecent(10);
 		repo.setMaxRecent(100);
 		repo.initialize();

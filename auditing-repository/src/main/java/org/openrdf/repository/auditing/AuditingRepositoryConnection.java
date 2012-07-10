@@ -102,6 +102,8 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private final Map<URI, Set<URI>> modifiedGraphs = new HashMap<URI, Set<URI>>();
 	private final Map<URI, Set<URI>> modifiedEntities = new HashMap<URI, Set<URI>>();
 	private Set<URI> uncommittedActivityGraphs = new LinkedHashSet<URI>();
+	private ActivityFactory activityFactory;
+	private boolean assigningActivity;
 
 	public AuditingRepositoryConnection(AuditingRepository repository,
 			RepositoryConnection connection) throws RepositoryException {
@@ -109,9 +111,32 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		this.repository = repository;
 	}
 
+	public ActivityFactory getActivityFactory() {
+		return activityFactory;
+	}
+
+	public void setActivityFactory(ActivityFactory activityFactory) {
+		this.activityFactory = activityFactory;
+	}
+
 	@Override
 	public AuditingRepository getRepository() {
 		return repository;
+	}
+
+	@Override
+	public synchronized URI getInsertContext() {
+		URI activityGraph = super.getInsertContext();
+		if (activityGraph == null && !assigningActivity && activityFactory != null) {
+			assigningActivity = true;
+			try {
+				setInsertContext(activityFactory.assignActivityURI(this));
+			} finally {
+				assigningActivity = false;
+			}
+			return super.getInsertContext();
+		}
+		return activityGraph;
 	}
 
 	@Override
@@ -144,7 +169,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 			throws MalformedQueryException, RepositoryException {
 		final Update prepared = super.prepareUpdate(ql, update, baseURI);
 		if (prepared == null)
-			return null;
+			return prepared;
 		return new Update(){
 			public void execute() throws UpdateExecutionException {
 				try {
@@ -208,7 +233,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	}
 
 	@Override
-	protected boolean isDelegatingRemove() {
+	protected boolean isDelegatingRemove() throws RepositoryException {
 		return getInsertContext() == null;
 	}
 
@@ -367,7 +392,11 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		URI activityGraph = getInsertContext();
 		if (activityGraph == null)
 			return;
-		uncommittedActivityGraphs.add(activityGraph);
+		if (uncommittedActivityGraphs.add(activityGraph)) {
+			if (activityFactory != null) {
+				activityFactory.activityStarted(activityGraph, this);
+			}
+		}
 		if (subject instanceof URI && !activityGraph.equals(subject)) {
 			Set<URI> entities = modifiedEntities.get(activityGraph);
 			if (entities == null) {
@@ -460,6 +489,11 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		if (!getRepository().isTransactional()) {
 			for (URI activityGraph : recentActivities) {
 				balanceActivityGraph(activityGraph);
+			}
+		}
+		if (activityFactory != null) {
+			for (URI activityGraph : recentActivities) {
+				activityFactory.activityEnded(activityGraph, this);
 			}
 		}
 	}

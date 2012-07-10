@@ -116,13 +116,14 @@ public class AuditingRepository extends ContextAwareRepository {
 
 	private final Logger logger = LoggerFactory
 			.getLogger(AuditingRepository.class);
+	private final ArrayDeque<URI> recent = new ArrayDeque<URI>(1024);
 	private DatatypeFactory datatypeFactory;
 	private Duration purgeAfter;
 	private long nextPurge = Long.MAX_VALUE;
 	private int minRecent;
 	private int maxRecent;
 	private Boolean transactional;
-	private ArrayDeque<URI> recent = new ArrayDeque<URI>(1024);
+	private ActivityFactory activityFactory;
 
 	public AuditingRepository() {
 		super();
@@ -200,6 +201,14 @@ public class AuditingRepository extends ContextAwareRepository {
 		this.transactional = transactional;
 	}
 
+	public ActivityFactory getActivityFactory() {
+		return activityFactory;
+	}
+
+	public void setActivityFactory(ActivityFactory activityFactory) {
+		this.activityFactory = activityFactory;
+	}
+
 	@Override
 	public synchronized void initialize() throws RepositoryException {
 		super.initialize();
@@ -240,6 +249,7 @@ public class AuditingRepository extends ContextAwareRepository {
 		con.setRemoveContexts(getRemoveContexts());
 		con.setArchiveContexts(getArchiveContexts());
 		con.setInsertContext(getInsertContext());
+		con.setActivityFactory(getActivityFactory());
 		return con;
 	}
 

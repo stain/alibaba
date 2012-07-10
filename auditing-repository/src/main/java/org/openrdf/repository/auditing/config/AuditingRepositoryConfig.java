@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.auditing.config;
 
+import static org.openrdf.repository.auditing.config.AuditingSchema.ACTIVITY_NAMESPACE;
 import static org.openrdf.repository.auditing.config.AuditingSchema.MAX_RECENT;
 import static org.openrdf.repository.auditing.config.AuditingSchema.MIN_RECENT;
 import static org.openrdf.repository.auditing.config.AuditingSchema.PURGE_AFTER;
@@ -50,10 +51,19 @@ import org.openrdf.repository.contextaware.config.ContextAwareConfig;
 
 public class AuditingRepositoryConfig extends ContextAwareConfig {
 
+	private String ns;
 	private int minRecent;
 	private int maxRecent;
 	private Duration purgeAfter;
 	private Boolean transactional;
+
+	public String getNamespace() {
+		return ns;
+	}
+
+	public void setNamespace(String ns) {
+		this.ns = ns;
+	}
 
 	public int getMinRecent() {
 		return minRecent;
@@ -91,6 +101,9 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource self = super.export(model);
+		if (ns != null) {
+			model.add(self, ACTIVITY_NAMESPACE, vf.createLiteral(ns));
+		}
 		model.add(self, MIN_RECENT, vf.createLiteral(minRecent));
 		model.add(self, MAX_RECENT, vf.createLiteral(maxRecent));
 		if (purgeAfter != null) {
@@ -108,6 +121,7 @@ public class AuditingRepositoryConfig extends ContextAwareConfig {
 			throws RepositoryConfigException {
 		super.parse(graph, implNode);
 		Model model = new LinkedHashModel(graph);
+		setNamespace(model.filter(implNode, ACTIVITY_NAMESPACE, null).objectString());
 		Literal lit = model.filter(implNode, MIN_RECENT, null).objectLiteral();
 		if (lit != null) {
 			setMinRecent(lit.intValue());

@@ -43,6 +43,7 @@ public class AuditingSchema {
 	/** http://www.openrdf.org/config/sail/auditing# */
 	public static final String NAMESPACE = "http://www.openrdf.org/config/sail/auditing#";
 
+	public static final URI ACTIVITY_NAMESPACE = new URIImpl(NAMESPACE + "activityNamespace");
 	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentActivities");
 	public static final URI MAX_RECENT = new URIImpl(NAMESPACE + "maximumRecentActivities");
 	public static final URI PURGE_AFTER = new URIImpl(NAMESPACE + "purgeObsoleteActivitiesAfter");
