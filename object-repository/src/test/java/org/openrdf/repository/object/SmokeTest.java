@@ -59,7 +59,7 @@ public class SmokeTest extends TestCase {
 		@Sparql(PREFIX + "SELECT ?person { ?person foaf:depiction $this }")
 		Person getDepicts();
 
-		@Sparql(PREFIX + "DELETE { ?p foaf:depiction $this }\n"
+		@Sparql(PREFIX + "DELETE { ?p foaf:depiction $this } WHERE { ?p foaf:depiction $this } ;\n"
 				+ "INSERT { $person foaf:depiction $this } WHERE {} ")
 		void setDepicts(@Bind("person") Person person);
 	}
