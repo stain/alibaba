@@ -100,7 +100,6 @@ import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.Result;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
-import org.openrdf.rio.turtle.TurtleUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -615,7 +614,7 @@ public class SparqlEvaluator {
 			Literal lit = (Literal) value;
 			sb.append("\"");
 			String label = value.stringValue();
-			sb.append(TurtleUtil.encodeString(label));
+			sb.append(encodeString(label));
 			sb.append("\"");
 			if (lit.getDatatype() != null) {
 				// Append the literal's datatype (possibly written as an
@@ -633,7 +632,7 @@ public class SparqlEvaluator {
 		private void writeURI(StringBuilder sb, Value value) {
 			sb.append("<");
 			String uri = value.stringValue();
-			sb.append(TurtleUtil.encodeURIString(uri));
+			sb.append(encodeURIString(uri));
 			sb.append(">");
 		}
 
@@ -642,6 +641,21 @@ public class SparqlEvaluator {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
 			return qry;
+		}
+
+		private String encodeString(String label) {
+			label = label.replace("\\", "\\\\");
+			label = label.replace("\t", "\\t");
+			label = label.replace("\n", "\\n");
+			label = label.replace("\r", "\\r");
+			label = label.replace("\"", "\\\"");
+			return label;
+		}
+
+		private String encodeURIString(String uri) {
+			uri = uri.replace("\\", "\\\\");
+			uri = uri.replace(">", "\\>");
+			return uri;
 		}
 	}
 

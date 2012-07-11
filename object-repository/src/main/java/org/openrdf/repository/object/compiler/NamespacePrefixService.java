@@ -38,9 +38,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParser;
+import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.rio.helpers.RDFHandlerBase;
-import org.openrdf.rio.turtle.TurtleParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +72,7 @@ public class NamespacePrefixService {
 			con.addRequestProperty("Accept", "text/turtle");
 			InputStream in = con.getInputStream();
 			try {
-				TurtleParser parser = new TurtleParser();
+				RDFParser parser = RDFParserRegistry.getInstance().get(RDFFormat.TURTLE).getParser();
 				final List<String> match = new ArrayList<String>();
 				parser.setRDFHandler(new RDFHandlerBase() {
 					public void handleNamespace(String prefix, String uri)

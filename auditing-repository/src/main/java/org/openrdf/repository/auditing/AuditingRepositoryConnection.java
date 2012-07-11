@@ -61,7 +61,6 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.auditing.helpers.BasicGraphPatternVisitor;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.rio.turtle.TurtleUtil;
 
 public class AuditingRepositoryConnection extends ContextAwareConnection {
 
@@ -302,7 +301,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		} else if (object instanceof Literal) {
 			Literal lit = (Literal) object;
 			sb.append('"');
-			sb.append(TurtleUtil.encodeString(lit.stringValue()));
+			sb.append(encodeString(lit.stringValue()));
 			sb.append('"');
 			if (lit.getLanguage() != null) {
 				sb.append("@");
@@ -316,8 +315,20 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		}
 	}
 
-	private String enc(Value uri) {
-		return TurtleUtil.encodeURIString(uri.stringValue());
+	private String enc(Value iri) {
+		String uri = iri.stringValue();
+		uri = uri.replace("\\", "\\\\");
+		uri = uri.replace(">", "\\>");
+		return uri;
+	}
+
+	private String encodeString(String label) {
+		label = label.replace("\\", "\\\\");
+		label = label.replace("\t", "\\t");
+		label = label.replace("\n", "\\n");
+		label = label.replace("\r", "\\r");
+		label = label.replace("\"", "\\\"");
+		return label;
 	}
 
 	private void activity(QueryLanguage ql, String update, String baseURI,
