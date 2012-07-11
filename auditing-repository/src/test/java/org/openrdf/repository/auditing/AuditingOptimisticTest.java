@@ -51,7 +51,6 @@ public class AuditingOptimisticTest extends TestCase {
 	private URI thomson = vf.createURI(NS, "thomson");
 	private URI knows = vf.createURI("http://xmlns.com/foaf/0.1/knows");
 	private URI lastActivity;
-	private int activityNumber;
 	private AuditingRepositoryConnection con;
 	private AuditingRepository repo;
 
@@ -90,8 +89,8 @@ public class AuditingOptimisticTest extends TestCase {
 		final ActivityFactory delegate = repo.getActivityFactory();
 		repo.setActivityFactory(new ActivityFactory() {
 
-			public URI assignActivityURI(AuditingRepositoryConnection con) {
-				return lastActivity = delegate.assignActivityURI(con);
+			public URI createActivityURI(ValueFactory vf) {
+				return lastActivity = delegate.createActivityURI(vf);
 			}
 
 			public void activityEnded(URI activityGraph,
@@ -470,6 +469,23 @@ public class AuditingOptimisticTest extends TestCase {
 		assertFalse(con.hasStatement(carmichael, knows, jackson, false));
 		assertTrue(con.hasStatement(carmichael, GENERATED_BY, null, false));
 		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, ACTIVITY, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, OBSOLETE, false));
+		assertTrue(con.hasStatement(null, ENDED_AT, null, false));
+		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
+		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+	}
+
+	public void testAutoCommit() throws Exception {
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con.close();
+		con = repo.getConnection();
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, GENERATED_BY, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(Arrays.asList(lastActivity), con.getContextIDs().asList());
 		assertTrue(con.hasStatement(null, RDF.TYPE, ACTIVITY, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, OBSOLETE, false));

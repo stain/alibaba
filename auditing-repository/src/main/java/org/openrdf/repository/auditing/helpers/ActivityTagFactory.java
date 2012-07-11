@@ -7,11 +7,14 @@ import java.util.GregorianCalendar;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.auditing.ActivityFactory;
-import org.openrdf.repository.auditing.AuditingRepositoryConnection;
 
 public class ActivityTagFactory implements ActivityFactory {
+	private static final String ACTIVITY = "http://www.w3.org/ns/prov#Activity";
 	private static final String uid = "t"
 			+ Long.toHexString(System.currentTimeMillis()) + "x";
 	private static final AtomicLong seq = new AtomicLong(0);
@@ -31,13 +34,15 @@ public class ActivityTagFactory implements ActivityFactory {
 		space = "tag:" + username + "@" + hostName + ",";
 	}
 
-	public URI assignActivityURI(AuditingRepositoryConnection con) {
+	public URI createActivityURI(ValueFactory vf) {
 		String local = uid + seq.getAndIncrement();
-		return con.getValueFactory().createURI(getNamespace(), local);
+		return vf.createURI(getNamespace(), local);
 	}
 
-	public void activityStarted(URI activityGraph, RepositoryConnection con) {
-		// don't care
+	public void activityStarted(URI activityGraph, RepositoryConnection con)
+			throws RepositoryException {
+		ValueFactory vf = con.getValueFactory();
+		con.add(activityGraph, RDF.TYPE, vf.createURI(ACTIVITY), activityGraph);
 	}
 
 	public void activityEnded(URI activityGraph, RepositoryConnection con) {
