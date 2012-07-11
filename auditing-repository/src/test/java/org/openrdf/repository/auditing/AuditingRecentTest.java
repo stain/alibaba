@@ -51,7 +51,6 @@ public class AuditingRecentTest extends TestCase {
 	private URI thomson = vf.createURI(NS, "thomson");
 	private URI knows = vf.createURI("http://xmlns.com/foaf/0.1/knows");
 	private URI lastActivity;
-	private int activityNumber;
 	private AuditingRepositoryConnection con;
 	private AuditingRepository repo;
 
@@ -85,13 +84,17 @@ public class AuditingRecentTest extends TestCase {
 		sail = new AuditingSail(sail);
 		Repository r = new SailRepository(sail);
 		repo = new AuditingRepository(r);
+		repo.setMinRecent(10);
+		repo.setMaxRecent(100);
+		repo.initialize();
 		final DatatypeFactory df = DatatypeFactory.newInstance();
+		final ActivityFactory delegate = repo.getActivityFactory();
 		repo.setActivityFactory(new ActivityFactory() {
-			
+
 			public URI assignActivityURI(AuditingRepositoryConnection con) {
-				return lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
+				return lastActivity = delegate.assignActivityURI(con);
 			}
-			
+
 			public void activityEnded(URI activityGraph,
 					RepositoryConnection con) throws RepositoryException {
 				XMLGregorianCalendar now = df.newXMLGregorianCalendar(new GregorianCalendar());
@@ -103,11 +106,7 @@ public class AuditingRecentTest extends TestCase {
 				con.add(activityGraph, RDF.TYPE, ACTIVITY, activityGraph);
 			}
 		});
-		repo.setMinRecent(10);
-		repo.setMaxRecent(100);
-		repo.initialize();
 		con = repo.getConnection();
-		activityNumber = 0;
 	}
 
 	public void tearDown() throws Exception {

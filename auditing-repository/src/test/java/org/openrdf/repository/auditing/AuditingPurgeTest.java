@@ -85,13 +85,16 @@ public class AuditingPurgeTest extends TestCase {
 		sail = new AuditingSail(sail);
 		Repository r = new SailRepository(sail);
 		repo = new AuditingRepository(r);
+		repo.setPurgeAfter(DatatypeFactory.newInstance().newDuration("PT0S"));
+		repo.initialize();
 		final DatatypeFactory df = DatatypeFactory.newInstance();
+		final ActivityFactory delegate = repo.getActivityFactory();
 		repo.setActivityFactory(new ActivityFactory() {
-			
+
 			public URI assignActivityURI(AuditingRepositoryConnection con) {
-				return lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
+				return lastActivity = delegate.assignActivityURI(con);
 			}
-			
+
 			public void activityEnded(URI activityGraph,
 					RepositoryConnection con) throws RepositoryException {
 				XMLGregorianCalendar now = df.newXMLGregorianCalendar(new GregorianCalendar());
@@ -103,10 +106,7 @@ public class AuditingPurgeTest extends TestCase {
 				con.add(activityGraph, RDF.TYPE, ACTIVITY, activityGraph);
 			}
 		});
-		repo.setPurgeAfter(DatatypeFactory.newInstance().newDuration("PT0S"));
-		repo.initialize();
 		con = repo.getConnection();
-		activityNumber = 0;
 	}
 
 	public void tearDown() throws Exception {

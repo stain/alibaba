@@ -14,16 +14,8 @@
    rep:repositoryImpl [
       rep:repositoryType "openrdf:ObjectRepository" ;
       rep:delegate [
-	     rep:repositoryType "openrdf:AuditingRepository" ;
-         audit:activityNamespace "{%Activity namespace|urn:activity:localhost:%}" ;
-	     audit:purgeObsoleteActivitiesAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
-	     audit:minimumRecentActivities {%Minimum recent transactions|100%} ;
-	     audit:maximumRecentActivities {%Maximum recent transactions|1000%} ;
-	     audit:isTransactional false ;
-	     rep:delegate [
-	         rep:repositoryType "openrdf:SPARQLRepository" ;
-	         sparql:endpoint <{%SPARQL end-point|http://localhost:8080/openrdf-sesame/repositories/SYSTEM%}>
-	     ]
+         rep:repositoryType "openrdf:SPARQLRepository" ;
+         sparql:endpoint <{%SPARQL end-point|http://localhost:8080/openrdf-sesame/repositories/SYSTEM%}>
       ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;
       ctx:queryLanguage "{%Default Query Language|SPARQL%}" ;

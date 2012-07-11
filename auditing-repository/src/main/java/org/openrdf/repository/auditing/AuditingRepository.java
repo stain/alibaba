@@ -58,6 +58,7 @@ import org.openrdf.repository.DelegatingRepository;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.auditing.helpers.ActivityTagFactory;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sparql.SPARQLRepository;
@@ -216,6 +217,9 @@ public class AuditingRepository extends ContextAwareRepository {
 			datatypeFactory = DatatypeFactory.newInstance();
 		} catch (DatatypeConfigurationException e) {
 			throw new RepositoryException(e);
+		}
+		if (getActivityFactory() == null) {
+			setActivityFactory(new ActivityTagFactory());
 		}
 		RepositoryConnection con = super.getConnection();
 		try {

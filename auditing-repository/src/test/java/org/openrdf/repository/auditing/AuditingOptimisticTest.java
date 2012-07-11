@@ -85,13 +85,15 @@ public class AuditingOptimisticTest extends TestCase {
 		sail = new AuditingSail(sail);
 		Repository r = new OptimisticRepository(sail);
 		repo = new AuditingRepository(r);
+		repo.initialize();
 		final DatatypeFactory df = DatatypeFactory.newInstance();
+		final ActivityFactory delegate = repo.getActivityFactory();
 		repo.setActivityFactory(new ActivityFactory() {
-			
+
 			public URI assignActivityURI(AuditingRepositoryConnection con) {
-				return lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
+				return lastActivity = delegate.assignActivityURI(con);
 			}
-			
+
 			public void activityEnded(URI activityGraph,
 					RepositoryConnection con) throws RepositoryException {
 				XMLGregorianCalendar now = df.newXMLGregorianCalendar(new GregorianCalendar());
@@ -103,9 +105,7 @@ public class AuditingOptimisticTest extends TestCase {
 				con.add(activityGraph, RDF.TYPE, ACTIVITY, activityGraph);
 			}
 		});
-		repo.initialize();
 		con = repo.getConnection();
-		activityNumber = 0;
 	}
 
 	public void tearDown() throws Exception {

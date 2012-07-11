@@ -20,7 +20,7 @@
       rep:repositoryType "openrdf:ObjectRepository" ;
 	  rep:delegate [
 	      rep:repositoryType "openrdf:AuditingRepository" ;
-          audit:activityNamespace "{%Activity namespace|urn:activity:localhost:%}" ;
+          audit:activityNamespace "{%Activity namespace|%}" ;
 	      audit:purgeObsoleteActivitiesAfter "P{%Purge obsolete transactions after this many days|30%}D" ;
 	      audit:minimumRecentActivities {%Minimum recent transactions|100%} ;
 	      audit:maximumRecentActivities {%Maximum recent transactions|1000%} ;

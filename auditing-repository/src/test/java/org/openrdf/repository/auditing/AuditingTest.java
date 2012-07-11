@@ -51,7 +51,6 @@ public class AuditingTest extends TestCase {
 	private URI thomson = vf.createURI(NS, "thomson");
 	private URI knows = vf.createURI("http://xmlns.com/foaf/0.1/knows");
 	private URI lastActivity;
-	private int activityNumber;
 	private AuditingRepositoryConnection con;
 	private AuditingRepository repo;
 
@@ -85,11 +84,13 @@ public class AuditingTest extends TestCase {
 		sail = new AuditingSail(sail);
 		Repository r = new SailRepository(sail);
 		repo = new AuditingRepository(r);
+		repo.initialize();
 		final DatatypeFactory df = DatatypeFactory.newInstance();
+		final ActivityFactory delegate = repo.getActivityFactory();
 		repo.setActivityFactory(new ActivityFactory() {
 
 			public URI assignActivityURI(AuditingRepositoryConnection con) {
-				return lastActivity = vf.createURI(NS, "activity" + (++activityNumber));
+				return lastActivity = delegate.assignActivityURI(con);
 			}
 
 			public void activityEnded(URI activityGraph,
@@ -103,9 +104,7 @@ public class AuditingTest extends TestCase {
 				con.add(activityGraph, RDF.TYPE, ACTIVITY, activityGraph);
 			}
 		});
-		repo.initialize();
 		con = repo.getConnection();
-		activityNumber = 0;
 	}
 
 	public void tearDown() throws Exception {

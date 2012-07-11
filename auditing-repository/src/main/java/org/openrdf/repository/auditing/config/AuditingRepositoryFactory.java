@@ -30,6 +30,7 @@ package org.openrdf.repository.auditing.config;
 
 import org.openrdf.repository.auditing.AuditingRepository;
 import org.openrdf.repository.auditing.helpers.ActivitySequenceFactory;
+import org.openrdf.repository.auditing.helpers.ActivityTagFactory;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
@@ -88,7 +89,9 @@ public class AuditingRepositoryFactory extends ContextAwareFactory {
 			AuditingRepositoryConfig config) {
 		AuditingRepository repo = new AuditingRepository();
 		String ns = config.getNamespace();
-		if (ns != null) {
+		if (ns == null || ns.length() <= 0) {
+			repo.setActivityFactory(new ActivityTagFactory());
+		} else {
 			repo.setActivityFactory(new ActivitySequenceFactory(ns));
 		}
 		repo.setMinRecent(config.getMinRecent());
