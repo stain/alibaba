@@ -146,6 +146,12 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	}
 
 	@Override
+	public void rollback() throws RepositoryException {
+		super.rollback();
+		reset();
+	}
+
+	@Override
 	public void close() throws RepositoryException {
 		super.close();
 		getRepository().cleanup();
@@ -460,6 +466,12 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		modifiedGraphs.clear();
 		modifiedEntities.clear();
 		return recentActivities;
+	}
+
+	private synchronized void reset() {
+		uncommittedActivityGraphs = new LinkedHashSet<URI>(uncommittedActivityGraphs.size());
+		modifiedGraphs.clear();
+		modifiedEntities.clear();
 	}
 
 	private void addMetadata(URI activityGraph, Set<URI> entities,

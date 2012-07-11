@@ -454,4 +454,28 @@ public class AuditingRecentTest extends TestCase {
 		assertTrue(con.hasStatement(null, INFORMED_BY, null, false));
 		assertTrue(con.hasStatement(null, CAHNGED, null, false));
 	}
+
+	public void testRollback() throws Exception {
+		begin(con);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.rollback();
+		con.setAutoCommit(true);
+		con.close();
+		con = repo.getConnection();
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertFalse(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, GENERATED_BY, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, ACTIVITY, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, OBSOLETE, false));
+		assertTrue(con.hasStatement(null, ENDED_AT, null, false));
+		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
+		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+	}
 }
