@@ -147,6 +147,7 @@ public class ObjectFactory {
 	 * Creates an object with no rdf:type.
 	 */
 	public RDFObject createObject(Resource resource) {
+		assert resource != null;
 		if (resource instanceof URI)
 			return createBean(resource, resolver.resolveEntity((URI) resource));
 		return createBean(resource, resolver.resolveBlankEntity());
@@ -200,6 +201,7 @@ public class ObjectFactory {
 	 * Creates an object with assumed rdf:types.
 	 */
 	public RDFObject createObject(Resource resource, Set<URI> types) {
+		assert resource != null;
 		Class<?> proxy;
 		if (resource instanceof URI) {
 			if (types.isEmpty()) {
