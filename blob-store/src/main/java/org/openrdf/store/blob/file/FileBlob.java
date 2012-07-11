@@ -286,15 +286,9 @@ public class FileBlob extends BlobObject implements FileListener {
 	}
 
 	private void init(boolean write) throws IOException {
-		if (disk.isClosed()) {
-			if (write)
-				throw new IllegalStateException(
-						"Transaction has already completed");
-		} else {
-			if (!open) {
-				open = true;
-				disk.watch(uri, this);
-			}
+		if (!open) {
+			open = true;
+			disk.watch(uri, this);
 		}
 	}
 

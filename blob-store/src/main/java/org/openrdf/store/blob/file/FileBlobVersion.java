@@ -30,10 +30,8 @@ package org.openrdf.store.blob.file;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -46,7 +44,6 @@ public class FileBlobVersion implements BlobVersion {
 	private final FileBlobStore store;
 	private final Map<String, FileBlob> open;
 	private boolean prepared;
-	private boolean closed;
 
 	protected FileBlobVersion(FileBlobStore store) throws IOException {
 		assert store != null;
@@ -57,7 +54,6 @@ public class FileBlobVersion implements BlobVersion {
 	public synchronized int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (closed ? 1231 : 1237);
 		result = prime * result + store.hashCode();
 		result = prime * result + open.hashCode();
 		return result;
@@ -71,8 +67,6 @@ public class FileBlobVersion implements BlobVersion {
 		if (getClass() != obj.getClass())
 			return false;
 		FileBlobVersion other = (FileBlobVersion) obj;
-		if (closed != other.closed)
-			return false;
 		if (!store.equals(other.store))
 			return false;
 		if (!open.keySet().equals(other.open.keySet()))
@@ -86,14 +80,7 @@ public class FileBlobVersion implements BlobVersion {
 	}
 
 	public synchronized String[] getModifications() throws IOException {
-		if (closed)
-			return open.keySet().toArray(new String[open.size()]);
-		List<String> list = new ArrayList<String>(open.size());
-		for (Map.Entry<String, FileBlob> e : open.entrySet()) {
-			if (e.getValue().isChangePending())
-				list.add(e.getKey());
-		}
-		return list.toArray(new String[list.size()]);
+		return open.keySet().toArray(new String[open.size()]);
 	}
 
 	public synchronized BlobObject open(String uri) {
@@ -107,10 +94,6 @@ public class FileBlobVersion implements BlobVersion {
 	public synchronized void prepare() throws IOException {
 		if (prepared)
 			throw new IllegalStateException("This version is already prepared");
-		if (closed)
-			throw new IllegalStateException(
-					"This version has already completed");
-		closed = true;
 		store.lock();
 		prepared = true;
 		boolean faild = true;
@@ -157,10 +140,6 @@ public class FileBlobVersion implements BlobVersion {
 				store.unlock();
 			}
 		}
-	}
-
-	protected synchronized boolean isClosed() {
-		return closed;
 	}
 
 	protected File getDirectory() {

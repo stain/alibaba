@@ -267,9 +267,32 @@ public class DiskBlobStore implements BlobStore {
 				}
 			}
 		}
-		appendIndex(entry, version);
 		if (!obsolete.isEmpty()) {
 			appendObsolete(obsolete);
+		}
+	}
+
+	protected void newBlobVersion(String version, File file) throws IOException {
+		lock();
+		try {
+			File f = new File(journal, "index");
+			PrintWriter index = new PrintWriter(new FileWriter(f, true));
+			try {
+				String jpath = journal.getAbsolutePath();
+				String path = file.getAbsolutePath();
+				if (path.startsWith(jpath) && path.charAt(jpath.length()) == File.separatorChar) {
+					path = path.substring(jpath.length() + 1);
+				} else {
+					throw new AssertionError("Invalid version entry path: " + path);
+				}
+				index.print(path.replace(File.separatorChar, '/'));
+				index.print(' ');
+				index.println(version);
+			} finally {
+				index.close();
+			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -317,30 +340,6 @@ public class DiskBlobStore implements BlobStore {
 			reader.close();
 		}
 		return empty;
-	}
-
-	private void appendIndex(File file, String iri) throws IOException {
-		lock();
-		try {
-			File f = new File(journal, "index");
-			PrintWriter index = new PrintWriter(new FileWriter(f, true));
-			try {
-				String jpath = journal.getAbsolutePath();
-				String path = file.getAbsolutePath();
-				if (path.startsWith(jpath) && path.charAt(jpath.length()) == File.separatorChar) {
-					path = path.substring(jpath.length() + 1);
-				} else {
-					throw new AssertionError("Invalid version entry path: " + path);
-				}
-				index.print(path.replace(File.separatorChar, '/'));
-				index.print(' ');
-				index.println(iri);
-			} finally {
-				index.close();
-			}
-		} finally {
-			unlock();
-		}
 	}
 
 	private void appendObsolete(Set<String> obsolete) throws IOException {

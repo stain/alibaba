@@ -25,6 +25,21 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 		assertEquals("test1", str.toString());
 	}
 
+	public void testRechange() throws Exception {
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
+		Writer file = trx1.open("urn:test:file").openWriter();
+		file.append("test1");
+		file.close();
+		trx1.commit();
+		file = trx1.open("urn:test:file").openWriter();
+		file.append("second version");
+		file.close();
+		trx1.commit();
+		BlobObject blob = store.openVersion("urn:test:trx1").open("urn:test:file");
+		CharSequence str = blob.getCharContent(true);
+		assertEquals("second version", str.toString());
+	}
+
 	public void testAbandon() throws Exception {
 		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file = trx1.open("urn:test:file").openWriter();

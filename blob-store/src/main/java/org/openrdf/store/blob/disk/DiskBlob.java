@@ -283,6 +283,17 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return deleted || writeFile != null;
 	}
 
+	protected synchronized boolean resync() throws IOException {
+		final String erasing = disk.getVersion();
+		filterVersion(new Closure<Boolean>() {
+			public Boolean call(String name, long length, byte[] sha1,
+					String iri) {
+				return !iri.equals(erasing);
+			}
+		});
+		return sync();
+	}
+
 	protected synchronized boolean sync() throws IOException {
 		if (!open)
 			return false;
@@ -337,6 +348,29 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 	protected synchronized boolean erase() throws IOException {
 		final String erasing = disk.getVersion();
+		return filterVersion(new Closure<Boolean>() {
+			public Boolean call(String name, long length, byte[] sha1,
+					String iri) {
+				if (iri.equals(erasing) && name.length() > 0) {
+					File file = new File(dir, name);
+					file.delete();
+					File d = file.getParentFile();
+					String[] dlist = d.list();
+					if (dlist != null && dlist.length == 0) {
+						d.delete();
+					}
+					String[] plist = d.getParentFile().list();
+					if (plist != null && plist.length == 0) {
+						d.getParentFile().delete();
+					}
+					return false;
+				}
+				return !iri.equals(erasing);
+			}
+		});
+	}
+
+	private synchronized boolean filterVersion(final Closure<Boolean> closure) throws IOException {
 		final AtomicBoolean erased = new AtomicBoolean(false);
 		final File rest = new File(dir, getIndexFileName(disk.getVersion()
 				.hashCode()));
@@ -344,19 +378,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			eachVersion(new Closure<Void>() {
 				public Void call(String name, long length, byte[] sha1, String iri) {
-					if (iri.equals(erasing) && name.length() > 0) {
-						File file = new File(dir, name);
-						erased.set(file.delete());
-						File d = file.getParentFile();
-						if (d.list().length == 0) {
-							d.delete();
-						}
-						if (d.getParentFile().list().length == 0) {
-							d.getParentFile().delete();
-						}
-					} else if (iri.equals(erasing)) {
-						erased.set(true);
-					} else {
+					if (closure.call(name, length, sha1, iri)) {
 						writer.print(name);
 						writer.print(' ');
 						writer.print(Long.toString(length));
@@ -364,6 +386,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 						writer.print(Hex.encodeHex(sha1));
 						writer.print(' ');
 						writer.println(iri);
+					} else {
+						erased.set(true);
 					}
 					return null;
 				}
@@ -384,6 +408,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				}
 			}
 			return true;
+		} else {
+			rest.delete();
 		}
 		return false;
 	}
@@ -450,15 +476,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	}
 
 	private void init(boolean write) throws IOException {
-		if (disk.isClosed()) {
-			if (write)
-				throw new IllegalStateException(
-						"Transaction has already completed");
-		} else {
-			if (!open) {
-				open = true;
-				disk.watch(uri, this);
-			}
+		if (!open) {
+			open = true;
+			disk.watch(uri, this);
 		}
 		if (readDigest == null) {
 			Lock readLock = disk.readLock();
