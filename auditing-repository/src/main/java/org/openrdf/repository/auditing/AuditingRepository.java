@@ -66,6 +66,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuditingRepository extends ContextAwareRepository {
+	private static final String FILTER_NOT_EXISTS_ACTIVE_TRIPLES = "FILTER NOT EXISTS { GRAPH ?obsolete {\n\t\t\t"
+				+ "?s ?p ?o\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?obsolete),str(?s)) )\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?obsolete),str(?o)) )\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?s),str(?obsolete)) )\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?o),str(?obsolete)) )\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?p),str(rdf:)) || sameTerm(?p,rdf:type) && ( !isIRI(?o) || !strstarts(str(?o),str(rdf:)) && !strstarts(str(?o),str(prov:)) && !strstarts(str(?o),str(audit:)) ))\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?p),str(prov:)) )\n\t\t\t"
+				+ "FILTER ( !strstarts(str(?p),str(audit:)) )\n\t\t"
+				+ "}}\n\t\t";
 	private static final String SELECT_RECENT = "PREFIX prov:<http://www.w3.org/ns/prov#>\n"
 			+ "PREFIX audit:<http://www.openrdf.org/rdf/2012/auditing#>\n"
 			+ "SELECT REDUCED ?recent { ?recent a audit:RecentActivity\n\t"
@@ -89,12 +99,7 @@ public class AuditingRepository extends ContextAwareRepository {
 			+ "$activity prov:used ?entity . ?obsolete prov:used ?entity\n\t\t"
 			+ "}\n\t\t"
 			+ "FILTER NOT EXISTS { [prov:wasGeneratedBy ?obsolete] }\n\t"
-			+ "FILTER NOT EXISTS { GRAPH ?obsolete {\n\t\t\t"
-			+ "?s ?p ?o\n\t\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(rdf:)) || sameTerm(?p,rdf:type) && ( !isIRI(?o) || !strstarts(str(?o),str(rdf:)) && !strstarts(str(?o),str(prov:)) && !strstarts(str(?o),str(audit:)) ))\n\t\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(prov:)) )\n\t\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(audit:)) )\n\t\t"
-			+ "}}\n\t\t"
+			+ FILTER_NOT_EXISTS_ACTIVE_TRIPLES
 			+ "FILTER EXISTS { GRAPH ?obsolete { ?s ?p ?o } }\n\t"
 			+ "}\n"
 			+ "}";
@@ -107,12 +112,7 @@ public class AuditingRepository extends ContextAwareRepository {
 			+ "?obsolete a audit:ObsoleteActivity; prov:endedAtTime ?endedAtTime\n\t"
 			+ "FILTER (?endedAtTime < $earlier)\n\t"
 			+ "FILTER NOT EXISTS { ?obsolete a audit:RecentActivity }\n\t"
-			+ "FILTER NOT EXISTS { GRAPH ?obsolete {\n\t\t"
-			+ "?s ?p ?o\n\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(rdf:)) || sameTerm(?p,rdf:type) && ( !isIRI(?o) || !strstarts(str(?o),str(rdf:)) && !strstarts(str(?o),str(prov:)) && !strstarts(str(?o),str(audit:)) ))\n\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(prov:)) )\n\t\t"
-			+ "FILTER ( !strstarts(str(?p),str(audit:)) )\n\t"
-			+ "}}\n\t"
+			+ FILTER_NOT_EXISTS_ACTIVE_TRIPLES
 			+ "GRAPH ?obsolete { ?subject ?predicate ?object }\n" + "}";
 
 	private final Logger logger = LoggerFactory

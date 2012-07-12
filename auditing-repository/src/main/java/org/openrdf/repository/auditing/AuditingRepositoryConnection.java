@@ -100,6 +100,8 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private final AuditingRepository repository;
 	private final Map<URI, Set<URI>> modifiedGraphs = new HashMap<URI, Set<URI>>();
 	private final Map<URI, Set<URI>> modifiedEntities = new HashMap<URI, Set<URI>>();
+	private final URI provUsed;
+	private final URI provWasInformedBy;
 	private Set<URI> uncommittedActivityGraphs = new LinkedHashSet<URI>();
 	private ActivityFactory activityFactory;
 
@@ -107,6 +109,8 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 			RepositoryConnection connection) throws RepositoryException {
 		super(repository, connection);
 		this.repository = repository;
+		provUsed = connection.getValueFactory().createURI(USED);
+		provWasInformedBy = connection.getValueFactory().createURI(WAS_INFORMED_BY);
 	}
 
 	public ActivityFactory getActivityFactory() {
@@ -408,18 +412,18 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 				activityFactory.activityStarted(activityGraph, getDelegate());
 			}
 		}
-		if (subject instanceof URI && !activityGraph.equals(subject)) {
+		if (subject instanceof URI && !isActivityEntity(activityGraph, subject)) {
 			Set<URI> entities = modifiedEntities.get(activityGraph);
 			if (entities == null) {
-				modifiedEntities.put(activityGraph, entities = new LinkedHashSet<URI>());
+				modifiedEntities.put(activityGraph, entities = new HashSet<URI>());
 			}
-			entities.add(entity((URI) subject));
+			URI entity = entity((URI) subject);
+			if (entities.add(entity)) {
+				getDelegate().add(activityGraph, provUsed, entity, activityGraph);
+			}
 			if (entities.size() >= MAX_SIZE) {
-				URI used = getValueFactory().createURI(USED);
-				for (URI entity : entities) {
-					add(activityGraph, used, entity, activityGraph);
-				}
 				entities.clear();
+				entities.add(entity);
 			}
 		}
 		if (contexts == null || contexts.length == 0)
@@ -428,20 +432,30 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 			return;
 		Set<URI> graphs = modifiedGraphs.get(activityGraph);
 		if (graphs == null) {
-			modifiedGraphs.put(activityGraph, graphs = new LinkedHashSet<URI>());
+			modifiedGraphs.put(activityGraph, graphs = new HashSet<URI>());
 		}
 		for (Resource ctx : contexts) {
-			if (ctx instanceof URI && !activityGraph.equals(ctx)) {
-				graphs.add((URI) ctx);
+			if (ctx instanceof URI && !isActivityEntity(activityGraph, ctx)) {
+				if (graphs.add((URI) ctx)) {
+					getDelegate().add(activityGraph, provWasInformedBy, (URI) ctx, activityGraph);
+				}
+				if (graphs.size() >= MAX_SIZE) {
+					graphs.clear();
+					graphs.add((URI) ctx);
+				}
 			}
 		}
-		if (graphs.size() >= MAX_SIZE) {
-			URI informedBy = getValueFactory().createURI(WAS_INFORMED_BY);
-			for (URI graph : graphs) {
-				add(activityGraph, informedBy, graph, activityGraph);
-			}
-			graphs.clear();
+	}
+
+	private boolean isActivityEntity(URI activityGraph, Resource subject) {
+		if (activityGraph.equals(subject))
+			return true;
+		if (subject instanceof URI) {
+			String activity = activityGraph.stringValue();
+			String subj = subject.stringValue();
+			return subj.startsWith(activity) && subj.startsWith(activity + "#");
 		}
+		return false;
 	}
 
 	private synchronized Set<URI> finalizeActivityGraphs()
@@ -450,9 +464,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		int size = recentActivities.size();
 		uncommittedActivityGraphs = new LinkedHashSet<URI>(size);
 		for (URI activityGraph : recentActivities) {
-			Set<URI> graphs = modifiedGraphs.get(activityGraph);
-			Set<URI> entities = modifiedEntities.get(activityGraph);
-			addMetadata(activityGraph, entities, graphs);
+			addMetadata(activityGraph);
 			if (getRepository().isTransactional()) {
 				finalizeActivityGraph(activityGraph);
 			}
@@ -468,20 +480,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		modifiedEntities.clear();
 	}
 
-	private void addMetadata(URI activityGraph, Set<URI> entities,
-			Set<URI> graphs) throws RepositoryException {
-		if (entities != null) {
-			URI used = getValueFactory().createURI(USED);
-			for (URI entity : entities) {
-				getDelegate().add(activityGraph, used, entity, activityGraph);
-			}
-		}
-		if (graphs != null) {
-			URI informedBy = getValueFactory().createURI(WAS_INFORMED_BY);
-			for (URI graph : graphs) {
-				getDelegate().add(activityGraph, informedBy, graph, activityGraph);
-			}
-		}
+	private void addMetadata(URI activityGraph) throws RepositoryException {
 		URI recentActivity = getValueFactory().createURI(RECENT_ACTIVITY);
 		getDelegate().add(activityGraph, RDF.TYPE, recentActivity, activityGraph);
 	}
