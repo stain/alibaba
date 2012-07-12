@@ -544,9 +544,11 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private void finalizeActivityGraph(URI activityGraph)
 			throws RepositoryException {
 		try {
-			Update update = prepareUpdate(SPARQL, UPDATE_ACTIVITY);
+			Update update = getDelegate().prepareUpdate(SPARQL, UPDATE_ACTIVITY);
 			update.setBinding("activity", activityGraph);
-			update.setDataset(new DatasetImpl());
+			DatasetImpl ds = new DatasetImpl();
+			ds.setDefaultInsertGraph(activityGraph);
+			update.setDataset(ds);
 			update.execute();
 		} catch (UpdateExecutionException e) {
 			throw new RepositoryException(e);
@@ -573,9 +575,11 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private void balanceActivityGraph(URI activityGraph)
 			throws RepositoryException {
 		try {
-			Update update = prepareUpdate(SPARQL, BALANCE_ACTIVITY);
+			Update update = getDelegate().prepareUpdate(SPARQL, BALANCE_ACTIVITY);
 			update.setBinding("activity", activityGraph);
-			update.setDataset(new DatasetImpl());
+			DatasetImpl ds = new DatasetImpl();
+			ds.setDefaultInsertGraph(activityGraph);
+			update.setDataset(ds);
 			update.execute();
 		} catch (UpdateExecutionException e) {
 			throw new RepositoryException(e);
