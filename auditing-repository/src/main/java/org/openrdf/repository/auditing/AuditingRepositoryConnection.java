@@ -50,6 +50,16 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.Update;
 import org.openrdf.query.UpdateExecutionException;
+import org.openrdf.query.algebra.Add;
+import org.openrdf.query.algebra.Clear;
+import org.openrdf.query.algebra.Copy;
+import org.openrdf.query.algebra.Create;
+import org.openrdf.query.algebra.DeleteData;
+import org.openrdf.query.algebra.InsertData;
+import org.openrdf.query.algebra.Load;
+import org.openrdf.query.algebra.Modify;
+import org.openrdf.query.algebra.Move;
+import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.query.algebra.Var;
@@ -66,8 +76,9 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 
 	private static final int MAX_SIZE = 1024;
 	private static final String RECENT_ACTIVITY = "http://www.openrdf.org/rdf/2012/auditing#RecentActivity";
-	private static final String WAS_INFORMED_BY = "http://www.w3.org/ns/prov#wasInformedBy";
 	private static final String USED = "http://www.w3.org/ns/prov#used";
+	private static final String WAS_GENERATED_BY = "http://www.w3.org/ns/prov#wasGeneratedBy";
+	private static final String WAS_INFORMED_BY = "http://www.w3.org/ns/prov#wasInformedBy";
 	private static final String UPDATE_ACTIVITY = "PREFIX prov:<http://www.w3.org/ns/prov#>\n"
 			+ "DELETE {\n\t"
 			+ "?used prov:wasGeneratedBy ?generatedBy .\n\t"
@@ -101,6 +112,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private final Map<URI, Set<URI>> modifiedGraphs = new HashMap<URI, Set<URI>>();
 	private final Map<URI, Set<URI>> modifiedEntities = new HashMap<URI, Set<URI>>();
 	private final URI provUsed;
+	private final URI provWasGeneratedBy;
 	private final URI provWasInformedBy;
 	private Set<URI> uncommittedActivityGraphs = new LinkedHashSet<URI>();
 	private ActivityFactory activityFactory;
@@ -110,6 +122,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		super(repository, connection);
 		this.repository = repository;
 		provUsed = connection.getValueFactory().createURI(USED);
+		provWasGeneratedBy = connection.getValueFactory().createURI(WAS_GENERATED_BY);
 		provWasInformedBy = connection.getValueFactory().createURI(WAS_INFORMED_BY);
 	}
 
@@ -231,7 +244,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	@Override
 	protected void addWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
-		activity(subject, contexts);
+		activity(true, subject, contexts);
 		getDelegate().add(subject, predicate, object, contexts);
 	}
 
@@ -245,13 +258,13 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 			Value object, Resource... contexts) throws RepositoryException {
 		Resource[] defRemove = getReadContexts();
 		if (contexts == null || contexts.length > 0) {
-			activity(subject, contexts);
+			activity(false, subject, contexts);
 			getDelegate().remove(subject, predicate, object, contexts);
 		} else if (defRemove == null || defRemove.length > 0) {
-			activity(subject, defRemove);
+			activity(false, subject, defRemove);
 			getDelegate().remove(subject, predicate, object, defRemove);
 		} else {
-			activity(subject);
+			activity(false, subject);
 			executeDelete(subject, predicate, object);
 		}
 	}
@@ -337,18 +350,57 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 
 	private void activity(QueryLanguage ql, String update, String baseURI,
 			BindingSet bindings, Dataset dataset)
-			throws MalformedQueryException, RepositoryException, QueryEvaluationException {
+			throws MalformedQueryException, RepositoryException,
+			QueryEvaluationException {
 		QueryParser parser = QueryParserUtil.createParser(ql);
 		ParsedUpdate parsed = parser.parseUpdate(update, baseURI);
 		for (UpdateExpr expr : parsed.getUpdateExprs()) {
-			for (URI entity : findEntity(expr, bindings)) {
-				activity(entity);
+			if (expr instanceof Modify) {
+				QueryModelNode deleteExpr = ((Modify) expr).getDeleteExpr();
+				QueryModelNode insertExpr = ((Modify) expr).getInsertExpr();
+				if (deleteExpr != null) {
+					deleteActivity(deleteExpr, bindings, dataset);
+				}
+				if (insertExpr != null) {
+					insertActivity(insertExpr, bindings, dataset);
+				}
+			} else if (isDeleteOperation(expr)) {
+				deleteActivity(expr, bindings, dataset);
+			} else if (isInsertOperation(expr)) {
+				insertActivity(expr, bindings, dataset);
 			}
-			activity(null, findGraphs(expr, bindings, dataset));
 		}
 	}
 
-	private Set<URI> findEntity(UpdateExpr expr, final BindingSet bindings) throws QueryEvaluationException {
+	private void insertActivity(QueryModelNode insertExpr, BindingSet bindings,
+			Dataset dataset) throws QueryEvaluationException,
+			RepositoryException {
+		for (URI entity : findEntity(insertExpr, bindings)) {
+			activity(true, entity);
+		}
+		activity(true, null, findGraphs(insertExpr, bindings, dataset));
+	}
+
+	private void deleteActivity(QueryModelNode deleteExpr, BindingSet bindings,
+			Dataset dataset) throws QueryEvaluationException,
+			RepositoryException {
+		for (URI entity : findEntity(deleteExpr, bindings)) {
+			activity(false, entity);
+		}
+		activity(false, null, findGraphs(deleteExpr, bindings, dataset));
+	}
+
+	private boolean isInsertOperation(UpdateExpr expr) {
+		return expr instanceof Add || expr instanceof Copy
+				|| expr instanceof Create || expr instanceof InsertData
+				|| expr instanceof Load || expr instanceof Move;
+	}
+
+	private boolean isDeleteOperation(UpdateExpr expr) {
+		return expr instanceof Clear || expr instanceof DeleteData;
+	}
+
+	private Set<URI> findEntity(QueryModelNode expr, final BindingSet bindings) throws QueryEvaluationException {
 		final Set<URI> entities = new HashSet<URI>();
 		expr.visit(new BasicGraphPatternVisitor() {
 			public void meet(StatementPattern node) {
@@ -365,7 +417,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		return entities;
 	}
 
-	private URI[] findGraphs(UpdateExpr expr, final BindingSet bindings,
+	private URI[] findGraphs(QueryModelNode expr, final BindingSet bindings,
 			Dataset dataset) throws QueryEvaluationException {
 		final Set<URI> graphs = new LinkedHashSet<URI>();
 		if (dataset != null) {
@@ -403,7 +455,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		return entity;
 	}
 
-	private synchronized void activity(Resource subject, Resource... contexts) throws RepositoryException {
+	private synchronized void activity(boolean inserted, Resource subject, Resource... contexts) throws RepositoryException {
 		URI activityGraph = getInsertContext();
 		if (activityGraph == null)
 			return;
@@ -419,6 +471,10 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 			}
 			URI entity = entity((URI) subject);
 			if (entities.add(entity)) {
+				if (inserted) {
+					getDelegate().remove(entity, provWasGeneratedBy, null);
+					getDelegate().add(entity, provWasGeneratedBy, activityGraph, activityGraph);
+				}
 				getDelegate().add(activityGraph, provUsed, entity, activityGraph);
 			}
 			if (entities.size() >= MAX_SIZE) {

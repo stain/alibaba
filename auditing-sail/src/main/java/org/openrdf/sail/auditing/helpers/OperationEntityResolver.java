@@ -9,13 +9,13 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.query.algebra.Var;
 
 public class OperationEntityResolver {
 	private final ValueFactory vf;
-	private UpdateExpr updateExpr;
+	private QueryModelNode node;
 	private Dataset dataset;
 	private BindingSet bindings;
 	private URI entity;
@@ -24,18 +24,18 @@ public class OperationEntityResolver {
 		this.vf = vf;
 	}
 
-	public synchronized URI getEntity(UpdateExpr updateExpr, Dataset dataset, BindingSet bindings) {
+	public synchronized URI getEntity(QueryModelNode node, Dataset dataset, BindingSet bindings) {
 		if (dataset == null)
 			return null;
 		URI activity = dataset.getDefaultInsertGraph();
 		if (activity == null || activity.stringValue().indexOf('#') >= 0)
 			return null;
-		if (this.updateExpr == updateExpr && this.dataset == dataset && this.bindings == bindings)
+		if (this.node == node && this.dataset == dataset && this.bindings == bindings)
 			return this.entity;
 		final Set<Var> subjects = new HashSet<Var>();
 		final Set<Var> objects = new HashSet<Var>();
 		try {
-			updateExpr.visit(new BasicGraphPatternVisitor() {
+			node.visit(new BasicGraphPatternVisitor() {
 				public void meet(StatementPattern node) {
 					subjects.add(node.getSubjectVar());
 					objects.add(node.getObjectVar());
@@ -60,7 +60,7 @@ public class OperationEntityResolver {
 				return null;
 			}
 		}
-		this.updateExpr = updateExpr;
+		this.node = node;
 		this.dataset = dataset;
 		this.bindings = bindings;
 		this.entity = entity;

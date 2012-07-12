@@ -64,6 +64,8 @@ import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
+import org.openrdf.query.algebra.Modify;
+import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
@@ -144,7 +146,11 @@ public class AuditingConnection extends TransactionalSailConnectionWrapper {
 		SailConnection remover = this;
 		final URI activity = ds == null ? null : ds.getDefaultInsertGraph();
 		if (activity != null) {
-			final URI entity = entityResolver.getEntity(updateExpr, ds, bindings);
+			QueryModelNode node = updateExpr;
+			if (updateExpr instanceof Modify) {
+				node = ((Modify) updateExpr).getDeleteExpr();
+			}
+			final URI entity = entityResolver.getEntity(node, ds, bindings);
 			remover = new SailConnectionWrapper(this) {
 				public void removeStatements(Resource subj, URI pred,
 						Value obj, Resource... ctx) throws SailException {
