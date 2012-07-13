@@ -163,7 +163,8 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		}
 	}
 
-	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
+	private final Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
+	private File dataDir;
 	private boolean initialized;
 	private final ClassLoader baseClassLoader;
 	private final RoleMapper baseRoleMapper;
@@ -199,6 +200,16 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		this.baseClassLoader = cl;
 		this.baseRoleMapper = mapper;
 		this.baseLiteralManager = literals;
+	}
+
+	public File getObjectDataDir() {
+		if (dataDir == null)
+			return getDataDir();
+		return dataDir;
+	}
+
+	public void setObjectDataDir(File dataDir) {
+		this.dataDir = dataDir;
 	}
 
 	/**
@@ -314,7 +325,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	public void initialize() throws RepositoryException {
 		super.initialize();
 		try {
-			init(getDataDir());
+			init(getObjectDataDir());
 		} catch (ObjectStoreConfigException e) {
 			throw new RepositoryException(e);
 		}

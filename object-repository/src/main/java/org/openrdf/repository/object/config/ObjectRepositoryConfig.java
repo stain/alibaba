@@ -38,14 +38,17 @@ import static org.openrdf.repository.object.config.ObjectRepositorySchema.COMPIL
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT_JAR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATYPE;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATA_DIR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.FOLLOW_IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.KNOWN_AS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.MEMBER_PREFIX;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.PACKAGE_PREFIX;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,6 +84,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		Cloneable {
 	private static final String JAVA_NS = "java:";
+	private File dataDir;
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 	private ClassLoader cl;
 	private Map<Class<?>, List<URI>> datatypes = new HashMap<Class<?>, List<URI>>();
@@ -103,6 +107,14 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		if (cl == null) {
 			cl = getClass().getClassLoader();
 		}
+	}
+
+	public File getObjectDataDir() {
+		return dataDir;
+	}
+
+	public void setObjectDataDir(File dataDir) {
+		this.dataDir = dataDir;
 	}
 
 	public ObjectRepositoryConfig(ClassLoader cl) {
@@ -481,6 +493,9 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource subj = super.export(model);
+		if (dataDir != null) {
+			model.add(subj, DATA_DIR, vf.createURI(dataDir.toURI().toASCIIString()));
+		}
 		if (pkgPrefix != null) {
 			model.add(subj, PACKAGE_PREFIX, vf.createLiteral(pkgPrefix));
 		}
@@ -518,6 +533,18 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		super.parse(graph, subj);
 		try {
 			Model model = new LinkedHashModel(graph);
+			for (Value obj : model.filter(subj, DATA_DIR, null).objects()) {
+				if (obj instanceof URI) {
+					try {
+						java.net.URI uri = new java.net.URI(obj.stringValue());
+						setObjectDataDir(new File(uri));
+					} catch (URISyntaxException e) {
+						throw new RepositoryConfigException(e);
+					}
+				} else {
+					setObjectDataDir(new File(obj.stringValue()));
+				}
+			}
 			pkgPrefix = model.filter(subj, PACKAGE_PREFIX, null).objectString();
 			memberPrefix = model.filter(subj, MEMBER_PREFIX, null)
 					.objectString();

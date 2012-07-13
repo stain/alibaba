@@ -88,7 +88,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			RepositoryException {
 		ObjectRepository repo = getRepository(config);
 		repo.setDelegate(delegate);
-		repo.init(repo.getDataDir());
+		repo.init(repo.getObjectDataDir());
 		return repo;
 	}
 
@@ -164,6 +164,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 		repo.setBlobStoreUrl(module.getBlobStore());
 		repo.setBlobStoreParameters(module.getBlobStoreParameters());
+		repo.setObjectDataDir(module.getObjectDataDir());
 		return repo;
 	}
 

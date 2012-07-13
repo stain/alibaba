@@ -46,6 +46,9 @@ public class ObjectRepositorySchema {
 	 */
 	public static final String NAMESPACE = "http://www.openrdf.org/config/repository/object#";
 
+	/** <tt>http://www.openrdf.org/config/repository/object#dataDir</tt> */
+	public final static URI DATA_DIR;
+
 	/** <tt>http://www.openrdf.org/config/repository/object#compileRepository</tt> */
 	public final static URI COMPILE_REPOSITORY;
 
@@ -87,6 +90,7 @@ public class ObjectRepositorySchema {
 
 	static {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
+		DATA_DIR = vf.createURI(NAMESPACE, "dataDir");
 		COMPILE_REPOSITORY = vf.createURI(NAMESPACE, "compileRepository");
 		PACKAGE_PREFIX = vf.createURI(NAMESPACE, "packgaePrefix");
 		MEMBER_PREFIX = vf.createURI(NAMESPACE, "memberPrefix");
