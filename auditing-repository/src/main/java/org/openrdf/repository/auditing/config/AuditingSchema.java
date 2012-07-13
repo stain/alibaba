@@ -41,7 +41,7 @@ import org.openrdf.model.impl.URIImpl;
 public class AuditingSchema {
 
 	/** http://www.openrdf.org/config/sail/auditing# */
-	public static final String NAMESPACE = "http://www.openrdf.org/config/sail/auditing#";
+	public static final String NAMESPACE = "http://www.openrdf.org/config/repository/auditing#";
 
 	public static final URI ACTIVITY_NAMESPACE = new URIImpl(NAMESPACE + "activityNamespace");
 	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentActivities");

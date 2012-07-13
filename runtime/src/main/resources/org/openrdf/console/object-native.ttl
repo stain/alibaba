@@ -9,7 +9,7 @@
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix obj:  <http://www.openrdf.org/config/repository/object#>.
-@prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
+@prefix audit: <http://www.openrdf.org/config/repository/auditing#>.
 @prefix opt: <http://www.openrdf.org/config/repository/optimistic#>.
 @prefix keyword: <http://www.openrdf.org/config/sail/keyword#>.
 
