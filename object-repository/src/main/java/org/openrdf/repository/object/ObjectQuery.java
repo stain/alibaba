@@ -157,13 +157,13 @@ public class ObjectQuery implements Query {
 		TupleQueryResult tuple = query.evaluate();
 		List<String> bindings = tuple.getBindingNames();
 		if (concept.isArray() && !manager.getObjectFactory().isDatatype(concept)) {
-			ObjectArrayCursor cursor = new ObjectArrayCursor(manager, tuple, bindings);
-			Result result = new ResultImpl(cursor);
+			ObjectArrayCursor cursor = new ObjectArrayCursor(manager, tuple, bindings, concept.getComponentType());
+			Result result = new ResultImpl(cursor, concept);
 			return (Result<T>) result;
 		} else {
 			String binding = bindings.get(0);
 			ObjectCursor cursor = new ObjectCursor(manager, tuple, binding);
-			Result result = new ResultImpl(cursor);
+			Result result = new ResultImpl(cursor, concept);
 			return (Result<T>) result;
 		}
 	}

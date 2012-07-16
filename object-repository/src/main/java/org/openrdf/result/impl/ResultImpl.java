@@ -86,15 +86,16 @@ public class ResultImpl<E> implements Result<E> {
 		E result = next;
 		if (result == null && delegate.hasNext()) {
 			result = delegate.next();
-			try {
-				return componentType.cast(result);
-			} catch (ClassCastException e) {
-				throw new ClassCastException(String.valueOf(result)
-						+ " cannot be cast to " + componentType.getSimpleName());
-			}
 		}
 		next = null;
-		return result;
+		if (result == null)
+			return null;
+		try {
+			return componentType.cast(result);
+		} catch (ClassCastException e) {
+			throw new ClassCastException(String.valueOf(result)
+					+ " cannot be cast to " + componentType.getSimpleName());
+		}
 	}
 
 	/**

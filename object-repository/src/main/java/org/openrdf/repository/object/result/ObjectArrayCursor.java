@@ -30,6 +30,7 @@ package org.openrdf.repository.object.result;
 
 import info.aduna.iteration.LookAheadIteration;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,25 +54,32 @@ import org.openrdf.repository.object.traits.PropertyConsumer;
  * @author James Leigh
  * 
  */
-public class ObjectArrayCursor extends LookAheadIteration<Object[], QueryEvaluationException> {
+public class ObjectArrayCursor extends LookAheadIteration<Object, QueryEvaluationException> {
 
 	private List<String> bindings;
 	private TupleQueryResult result;
 	private BindingSet next;
 	private ObjectFactory of;
 	private ObjectConnection manager;
+	private final Class<?> componentType;
 
 	public ObjectArrayCursor(ObjectConnection manager, TupleQueryResult result,
 			List<String> bindings) throws QueryEvaluationException {
+		this(manager, result, bindings, Object.class);
+	}
+
+	public ObjectArrayCursor(ObjectConnection manager, TupleQueryResult result,
+			List<String> bindings, Class<?> componentType) throws QueryEvaluationException {
 		this.bindings = bindings;
 		this.result = result;
 		this.next = result.hasNext() ? result.next() : null;
 		this.manager = manager;
 		this.of = manager.getObjectFactory();
+		this.componentType = componentType;
 	}
 
 	@Override
-	public Object[] getNextElement() throws QueryEvaluationException {
+	public Object getNextElement() throws QueryEvaluationException {
 		if (next == null)
 			return null;
 		List<BindingSet> properties;
@@ -80,10 +88,11 @@ public class ObjectArrayCursor extends LookAheadIteration<Object[], QueryEvaluat
 			resources[i] = next.getValue(bindings.get(i));
 		}
 		properties = readProperties(resources);
-		Object[] result = new Object[resources.length];
+		Object result = Array.newInstance(componentType, resources.length);
 		for (int i = 0; i < resources.length; i++) {
 			if (resources[i] != null) {
-				result[i] = createRDFObject(resources[i], bindings.get(i), properties);
+				Object value = createRDFObject(resources[i], bindings.get(i), properties);
+				Array.set(result, i, value);
 			}
 		}
 		return result;

@@ -1,5 +1,6 @@
 package org.openrdf.repository.object;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -51,6 +52,10 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		Set<Person> findFriendsByNames(@Bind("name") Set<String> arg1);
 
 		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+				+ "?friend :name $name }")
+		Person[] findFriendsArrayByNames(@Bind("name") Set<String> arg1);
+
+		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name; :age $age }")
 		Set<Person> findFriendsByNamesAndAge(@Bind("name") Set<String> arg1, @Bind("age") Set<Integer> arg2);
 
@@ -99,6 +104,9 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		@Sparql(PREFIX + "SELECT $age WHERE { $this :age $age }")
 		int findAge(@Bind("age") int age);
 
+		@Sparql(PREFIX + "SELECT $age WHERE { $this :age $age }")
+		int []findAges(@Bind("age") int age);
+
 		@Sparql(PREFIX + "SELECT ?nothing WHERE { $this :age $bool }")
 		Object findNull(@Bind("bool") boolean bool);
 	}
@@ -143,6 +151,11 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 	public void testFriendsByNames() throws Exception {
 		assertEquals(Collections.singleton(john),
 				me.findFriendsByNames(Collections.singleton("john")));
+	}
+
+	public void testFriendsArrayByNames() throws Exception {
+		assertEquals(Collections.singletonList(john),
+				Arrays.asList(me.findFriendsArrayByNames(Collections.singleton("john"))));
 	}
 
 	public void testFriendsByNamesAndAge() throws Exception {
@@ -219,6 +232,11 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 	public void testInt() throws Exception {
 		int age = me.getAge();
 		assertEquals(age, me.findAge(age));
+	}
+
+	public void testIntArray() throws Exception {
+		int age = me.getAge();
+		assertEquals(age, Array.get(me.findAges(age), 0));
 	}
 
 	public void testBool() throws Exception {
