@@ -172,7 +172,7 @@ abstract class AbstractModel extends AbstractSet<Statement> implements
 		remove(null, null, null);
 	}
 
-	public boolean clear(Resource... contexts) {
+	public boolean clear(Value... contexts) {
 		return remove(null, null, null, contexts);
 	}
 

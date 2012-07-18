@@ -44,25 +44,22 @@ public class UnionModel extends AbstractModel {
 		}
 	}
 
-	private final Model add;
 	private final Model[] models;
 
 	public UnionModel(Model... unionOf) {
 		if (unionOf == null || unionOf.length == 0) {
-			add = new EmptyModel(new LinkedHashModel());
-			models = new Model[] { add };
+			models = new Model[] { new EmptyModel(new LinkedHashModel()) };
 		} else {
-			add = unionOf[0];
 			models = unionOf;
 		}
 	}
 
 	public Map<String, String> getNamespaces() {
-		return add.getNamespaces();
+		return models[0].getNamespaces();
 	}
 
 	public String getNamespace(String prefix) {
-		return add.getNamespace(prefix);
+		return models[0].getNamespace(prefix);
 	}
 
 	public String setNamespace(String prefix, String name) {
@@ -81,8 +78,8 @@ public class UnionModel extends AbstractModel {
 		return ret;
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		for (Model model : models) {
 			if (model.contains(subj, pred, obj, contexts))
 				return true;
@@ -91,11 +88,31 @@ public class UnionModel extends AbstractModel {
 	}
 
 	public boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
-		return add.add(subj, pred, obj, contexts);
+		boolean changed = false;
+		for (Resource ctx : notEmpty(contexts)) {
+			IllegalArgumentException iae = null;
+			UnsupportedOperationException uoe = null;
+			for (Model add : models) {
+				try {
+					changed |= add.add(subj, pred, obj, ctx);
+				} catch (IllegalArgumentException filtered) {
+					iae = filtered;
+					continue;
+				} catch (UnsupportedOperationException empty) {
+					uoe = empty;
+					continue;
+				}
+			}
+			if (iae != null)
+				throw iae;
+			if (uoe != null)
+				throw uoe;
+		}
+		return changed;
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		boolean modified = false;
 		for (Model model : models) {
 			modified |= model.remove(subj, pred, obj, contexts);
@@ -103,8 +120,8 @@ public class UnionModel extends AbstractModel {
 		return modified;
 	}
 
-	public Model filter(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public Model filter(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		final Model[] filter = new Model[models.length];
 		for (int i = 0; i < filter.length; i++) {
 			filter[i] = models[i].filter(subj, pred, obj, contexts);
@@ -139,6 +156,12 @@ public class UnionModel extends AbstractModel {
 				model.remove(subj, pred, obj, contexts);
 			}
 		}
+	}
+
+	private Resource[] notEmpty(Resource[] contexts) {
+		if (contexts == null || contexts.length == 0)
+			return new Resource[]{null};
+		return contexts;
 	}
 
 }

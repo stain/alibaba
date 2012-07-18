@@ -30,8 +30,10 @@ package org.openrdf.model.impl;
 
 import info.aduna.iteration.CloseableIteration;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.openrdf.model.Model;
@@ -57,7 +59,8 @@ public class RepositoryModel extends AbstractModel {
 		private final CloseableIteration<Statement, RepositoryException> stmts;
 		private Statement last;
 
-		private StatementIterator(CloseableIteration<Statement, RepositoryException> stmts) {
+		private StatementIterator(
+				CloseableIteration<Statement, RepositoryException> stmts) {
 			this.stmts = stmts;
 		}
 
@@ -168,16 +171,25 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		try {
-			return con.hasStatement(subj, pred, obj, false, contexts);
+			if (!isResourceURI(subj, pred) || !isEmptyOrResourcePresent(contexts))
+				return false;
+			return con.hasStatement((Resource) subj, (URI) pred, obj, false,
+					cast(contexts));
 		} catch (RepositoryException e) {
 			throw new ModelException(e);
 		}
 	}
 
-	public synchronized boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
+	private boolean isResourceURI(Value subj, Value pred) {
+		return (subj == null || subj instanceof Resource)
+				&& (pred == null || pred instanceof URI);
+	}
+
+	public synchronized boolean add(Resource subj, URI pred, Value obj,
+			Resource... contexts) {
 		if (subj == null || pred == null || obj == null)
 			throw new UnsupportedOperationException("Incomplete statement");
 		try {
@@ -193,10 +205,10 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public synchronized boolean clear(Resource... contexts) {
+	public synchronized boolean clear(Value... contexts) {
 		try {
 			if (contains(null, null, null, contexts)) {
-				con.clear(contexts);
+				con.clear(cast(contexts));
 				size = -1;
 				return true;
 			}
@@ -206,12 +218,12 @@ public class RepositoryModel extends AbstractModel {
 		return false;
 	}
 
-	public synchronized boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public synchronized boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		try {
 			if (contains(subj, pred, obj, contexts)) {
 				size = -1;
-				con.remove(subj, pred, obj, contexts);
+				con.remove((Resource) subj, (URI) pred, obj, cast(contexts));
 				return true;
 			}
 		} catch (RepositoryException e) {
@@ -230,15 +242,17 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public Model filter(final Resource subj, final URI pred, final Value obj,
-			final Resource... contexts) {
+	public Model filter(final Value subj, final Value pred, final Value obj,
+			final Value... contexts) {
+		if (!isResourceURI(subj, pred) || !isEmptyOrResourcePresent(contexts))
+			return new EmptyModel(this);
 		return new FilteredModel(this, subj, pred, obj, contexts) {
 
 			@Override
 			public int size() {
 				if (subj == null && pred == null && obj == null) {
 					try {
-						return (int) con.size(contexts);
+						return (int) con.size(cast(contexts));
 					} catch (RepositoryException e) {
 						throw new ModelException(e);
 					}
@@ -249,8 +263,9 @@ public class RepositoryModel extends AbstractModel {
 			@Override
 			public Iterator<Statement> iterator() {
 				try {
-					return new StatementIterator(con.getStatements(subj, pred,
-							obj, false, contexts));
+					return new StatementIterator(con.getStatements(
+							(Resource) subj, (URI) pred, obj, false,
+							cast(contexts)));
 				} catch (RepositoryException e) {
 					throw new ModelException(e);
 				}
@@ -259,14 +274,53 @@ public class RepositoryModel extends AbstractModel {
 	}
 
 	@Override
-	protected synchronized void removeIteration(Iterator<Statement> iter, Resource subj,
-			URI pred, Value obj, Resource... contexts) {
+	protected synchronized void removeIteration(Iterator<Statement> iter,
+			Resource subj, URI pred, Value obj, Resource... contexts) {
 		try {
 			con.remove(subj, pred, obj, contexts);
 			size = -1;
 		} catch (RepositoryException e) {
 			throw new ModelException(e);
 		}
+	}
+
+	private boolean isEmptyOrResourcePresent(Value[] contexts) {
+		if (contexts instanceof Resource[])
+			return true;
+		if (contexts == null)
+			return true;
+		if (contexts.length == 0)
+			return true;
+		Resource[] result = new Resource[contexts.length];
+		for (int i = 0; i < result.length; i++) {
+			if (contexts[i] == null || contexts[i] instanceof Resource)
+				return true;
+		}
+		return false;
+	}
+
+	private Resource[] cast(Value[] contexts) {
+		if (contexts instanceof Resource[])
+			return (Resource[]) contexts;
+		if (contexts == null)
+			return new Resource[] { null };
+		if (contexts.length == 0)
+			return new Resource[0];
+		Resource[] result = new Resource[contexts.length];
+		for (int i=0;i<result.length;i++) {
+			if (contexts[i] == null || contexts[i] instanceof Resource) {
+				result[i] = (Resource) contexts[i];
+			} else {
+				List<Resource> list = new ArrayList<Resource>();
+				for (Value v : contexts) {
+					if (v == null || v instanceof Resource) {
+						list.add((Resource) v);
+					}
+				}
+				return list.toArray(new Resource[list.size()]);
+			}
+		}
+		return result;
 	}
 
 }

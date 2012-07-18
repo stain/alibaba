@@ -34,8 +34,8 @@ class UnmodifiableModel extends AbstractModel {
 		throw new UnsupportedOperationException();
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return model.contains(subj, pred, obj, contexts);
 	}
 
@@ -43,13 +43,13 @@ class UnmodifiableModel extends AbstractModel {
 		throw new UnsupportedOperationException();
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		throw new UnsupportedOperationException();
 	}
 
-	public Model filter(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public Model filter(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return model.filter(subj, pred, obj, contexts).unmodifiable();
 	}
 

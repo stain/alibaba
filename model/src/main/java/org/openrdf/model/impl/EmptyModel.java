@@ -88,18 +88,18 @@ class EmptyModel extends AbstractModel {
 				"All statements are filtered out of view");
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return false;
 	}
 
-	public Model filter(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public Model filter(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return this;
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return false;
 	}
 

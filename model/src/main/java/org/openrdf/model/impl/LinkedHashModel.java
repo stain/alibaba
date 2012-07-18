@@ -104,16 +104,16 @@ public class LinkedHashModel extends AbstractModel {
 	public boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
 		if (subj == null || pred == null || obj == null)
 			throw new UnsupportedOperationException("Incomplete statement");
-		Resource[] ctxs = notNull(contexts);
+		Value[] ctxs = notNull(contexts);
 		if (ctxs.length == 0) {
 			ctxs = NULL_CTX;
 		}
 		boolean changed = false;
-		for (Resource ctx : ctxs) {
+		for (Value ctx : ctxs) {
 			ModelNode<Resource> s = asNode(subj);
 			ModelNode<URI> p = asNode(pred);
 			ModelNode<Value> o = asNode(obj);
-			ModelNode<Resource> c = asNode(ctx);
+			ModelNode<Resource> c = asNode((Resource) ctx);
 			ModelStatement st = new ModelStatement(s, p, o, c);
 			changed |= addModelStatement(st);
 		}
@@ -152,13 +152,13 @@ public class LinkedHashModel extends AbstractModel {
 		return match(null, null, null);
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return match(subj, pred, obj, contexts).hasNext();
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		Iterator iter = match(subj, pred, obj, contexts);
 		if (!iter.hasNext()) {
 			return false;
@@ -170,8 +170,8 @@ public class LinkedHashModel extends AbstractModel {
 		return true;
 	}
 
-	public Model filter(final Resource subj, final URI pred, final Value obj,
-			final Resource... contexts) {
+	public Model filter(final Value subj, final Value pred, final Value obj,
+			final Value... contexts) {
 		return new FilteredModel(this, subj, pred, obj, contexts) {
 			private static final long serialVersionUID = 396293781006255959L;
 
@@ -382,8 +382,8 @@ public class LinkedHashModel extends AbstractModel {
 		}
 	}
 
-	private ModelIterator match(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	private ModelIterator match(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		Set<ModelStatement> set = choose(subj, pred, obj, contexts);
 		Iterator<ModelStatement> it = set.iterator();
 		Iterator<ModelStatement> iter;
@@ -391,8 +391,8 @@ public class LinkedHashModel extends AbstractModel {
 		return new ModelIterator(iter, set);
 	}
 
-	private Set<ModelStatement> choose(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	private Set<ModelStatement> choose(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		contexts = notNull(contexts);
 		Set<ModelStatement> s = null;
 		Set<ModelStatement> p = null;
@@ -422,7 +422,7 @@ public class LinkedHashModel extends AbstractModel {
 		}
 	}
 
-	private Resource[] notNull(Resource[] contexts) {
+	private Value[] notNull(Value[] contexts) {
 		if (contexts == null) {
 			return new Resource[] { null };
 		}

@@ -52,7 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Model implementation that stores in a {@link LinkedHashModel} until more than
+ * Model implementation that stores in a {@link TreeModel} until more than
  * 10KB statements are added and the estimated memory usage is more than the
  * amount of free memory available. Once the threshold is cross this
  * implementation seamlessly changes to a disk based {@link RepositoryModel}.
@@ -66,7 +66,7 @@ public class MemoryOverflowModel extends AbstractModel {
 	private static final int LARGE_BLOCK = 10000;
 	private final Logger logger = LoggerFactory
 			.getLogger(MemoryOverflowModel.class);
-	private LinkedHashModel memory;
+	private TreeModel memory;
 	private Repository repository;
 	private RepositoryConnection connection;
 	private RepositoryModel disk;
@@ -74,30 +74,22 @@ public class MemoryOverflowModel extends AbstractModel {
 	private long maxBlockSize = 0;
 
 	public MemoryOverflowModel() {
-		memory = new LinkedHashModel();
+		memory = new TreeModel();
 	}
 
 	public MemoryOverflowModel(Model model) {
-		this(model.getNamespaces(), model.size());
+		this(model.getNamespaces());
 		addAll(model);
-	}
-
-	public MemoryOverflowModel(int size) {
-		memory = new LinkedHashModel(size);
 	}
 
 	public MemoryOverflowModel(Map<String, String> namespaces,
 			Collection<? extends Statement> c) {
-		this(namespaces, c.size());
+		this(namespaces);
 		addAll(c);
 	}
 
 	public MemoryOverflowModel(Map<String, String> namespaces) {
-		memory = new LinkedHashModel(namespaces);
-	}
-
-	public MemoryOverflowModel(Map<String, String> namespaces, int size) {
-		memory = new LinkedHashModel(namespaces, size);
+		memory = new TreeModel(namespaces);
 	}
 
 	@Override
@@ -126,8 +118,8 @@ public class MemoryOverflowModel extends AbstractModel {
 		return memory.removeNamespace(prefix);
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean contains(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return getDelegate().contains(subj, pred, obj, contexts);
 	}
 
@@ -136,8 +128,8 @@ public class MemoryOverflowModel extends AbstractModel {
 		return getDelegate().add(subj, pred, obj, contexts);
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public boolean remove(Value subj, Value pred, Value obj,
+			Value... contexts) {
 		return getDelegate().remove(subj, pred, obj, contexts);
 	}
 
@@ -149,12 +141,12 @@ public class MemoryOverflowModel extends AbstractModel {
 		return getDelegate().iterator();
 	}
 
-	public boolean clear(Resource... contexts) {
+	public boolean clear(Value... contexts) {
 		return getDelegate().clear(contexts);
 	}
 
-	public Model filter(final Resource subj, final URI pred, final Value obj,
-			final Resource... contexts) {
+	public Model filter(final Value subj, final Value pred, final Value obj,
+			final Value... contexts) {
 		return new FilteredModel(this, subj, pred, obj, contexts) {
 			private static final long serialVersionUID = -475666402618133101L;
 
@@ -267,7 +259,7 @@ public class MemoryOverflowModel extends AbstractModel {
 				}
 			};
 			disk.addAll(memory);
-			memory = new LinkedHashModel(memory.getNamespaces());
+			memory = new TreeModel(memory.getNamespaces());
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {

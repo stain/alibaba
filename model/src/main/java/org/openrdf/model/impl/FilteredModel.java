@@ -42,16 +42,16 @@ abstract class FilteredModel extends AbstractModel {
 
 	private static final long serialVersionUID = -2353344619836326934L;
 
-	private Resource subj;
+	private Value subj;
 
-	private URI pred;
+	private Value pred;
 
 	private Value obj;
 
-	private Resource[] contexts;
+	private Value[] contexts;
 
-	public FilteredModel(AbstractModel model, Resource subj, URI pred, Value obj,
-			Resource... contexts) {
+	public FilteredModel(AbstractModel model, Value subj, Value pred, Value obj,
+			Value... contexts) {
 		this.model = model;
 		this.subj = subj;
 		this.pred = pred;
@@ -92,16 +92,16 @@ abstract class FilteredModel extends AbstractModel {
 
 	public boolean add(Resource s, URI p, Value o, Resource... c) {
 		if (s == null) {
-			s = subj;
+			s = (Resource) subj;
 		}
 		if (p == null) {
-			p = pred;
+			p = (URI) pred;
 		}
 		if (o == null) {
 			o = obj;
 		}
 		if (c != null && c.length == 0) {
-			c = contexts;
+			c = cast(contexts);
 		}
 		if (!accept(s, p, o, c)) {
 			throw new IllegalArgumentException(
@@ -110,7 +110,7 @@ abstract class FilteredModel extends AbstractModel {
 		return model.add(s, p, o, c);
 	}
 
-	public boolean remove(Resource s, URI p, Value o, Resource... c) {
+	public boolean remove(Value s, Value p, Value o, Value... c) {
 		if (s == null) {
 			s = subj;
 		}
@@ -129,7 +129,7 @@ abstract class FilteredModel extends AbstractModel {
 		return model.remove(s, p, o, c);
 	}
 
-	public boolean contains(Resource s, URI p, Value o, Resource... c) {
+	public boolean contains(Value s, Value p, Value o, Value... c) {
 		if (s == null) {
 			s = subj;
 		}
@@ -148,7 +148,7 @@ abstract class FilteredModel extends AbstractModel {
 		return model.contains(s, p, o, c);
 	}
 
-	public Model filter(Resource s, URI p, Value o, Resource... c) {
+	public Model filter(Value s, Value p, Value o, Value... c) {
 		if (s == null) {
 			s = subj;
 		}
@@ -171,16 +171,16 @@ abstract class FilteredModel extends AbstractModel {
 	protected final void removeIteration(Iterator<Statement> iter, Resource s, URI p,
 			Value o, Resource... c) {
 		if (s == null) {
-			s = subj;
+			s = (Resource) subj;
 		}
 		if (p == null) {
-			p = pred;
+			p = (URI) pred;
 		}
 		if (o == null) {
 			o = obj;
 		}
 		if (c != null && c.length == 0) {
-			c = contexts;
+			c = cast(contexts);
 		}
 		if (!accept(s, p, o, c)) {
 			throw new IllegalStateException();
@@ -198,7 +198,7 @@ abstract class FilteredModel extends AbstractModel {
 		model.removeIteration(iter, subj, pred, obj, contexts);
 	}
 
-	private boolean accept(Resource s, URI p, Value o, Resource... c) {
+	private boolean accept(Value s, Value p, Value o, Value... c) {
 		if (subj != null && !subj.equals(s)) {
 			return false;
 		}
@@ -211,12 +211,12 @@ abstract class FilteredModel extends AbstractModel {
 		if (!matches(notNull(c), contexts)) {
 			return false;
 		}
-		return true;
+		return (s == null || s instanceof Resource) && (p == null || p instanceof URI);
 	}
 
-	private boolean matches(Resource[] stContext, Resource... contexts) {
+	private boolean matches(Value[] stContext, Value... contexts) {
 		if (stContext != null && stContext.length > 0) {
-			for (Resource c : stContext) {
+			for (Value c : stContext) {
 				if (!matches(c, contexts)) {
 					return false;
 				}
@@ -225,13 +225,13 @@ abstract class FilteredModel extends AbstractModel {
 		return true;
 	}
 
-	private boolean matches(Resource stContext, Resource... contexts) {
+	private boolean matches(Value stContext, Value... contexts) {
 		if (contexts != null && contexts.length == 0) {
 			// Any context matches
-			return true;
+			return stContext == null || stContext instanceof Resource;
 		} else {
 			// Accept if one of the contexts from the pattern matches
-			for (Resource context : notNull(contexts)) {
+			for (Value context : notNull(contexts)) {
 				if (context == null && stContext == null) {
 					return true;
 				}
@@ -244,10 +244,23 @@ abstract class FilteredModel extends AbstractModel {
 		}
 	}
 
-	private Resource[] notNull(Resource[] contexts) {
-		if (contexts == null) {
+	private Resource[] cast(Value[] contexts) {
+		if (contexts instanceof Resource[])
+			return (Resource[]) contexts;
+		if (contexts == null)
 			return new Resource[] { null };
-		}
+		if (contexts.length == 0)
+			return new Resource[0];
+		Resource[] result = new Resource[contexts.length];
+		System.arraycopy(contexts, 0, result, 0, contexts.length);
+		return result;
+	}
+
+	private Value[] notNull(Value[] contexts) {
+		if (contexts == null)
+			return new Resource[] { null };
+		if (contexts.length == 0)
+			return new Resource[0];
 		return contexts;
 	}
 }
