@@ -59,6 +59,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.TreeModel;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
@@ -382,7 +383,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		}
 		libDir.deleteOnExit();
 		synchronized (compiling) {
-			Model schema = new LinkedHashModel();
+			Model schema = new TreeModel();
 			try {
 				if (isCompileRepository()) {
 					loadSchema(schema);
@@ -579,7 +580,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	}
 
 	private boolean recompile() throws RepositoryException {
-		Model schema = new LinkedHashModel();
+		Model schema = new TreeModel();
 		loadSchema(schema);
 		try {
 			long hash = hash(schema);
@@ -832,7 +833,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 							Resource subj = (Resource) b.getValue("subject");
 							URI pred = (URI) b.getValue("predicate");
 							Value obj = b.getValue("object");
-							Resource grp = (Resource) b.getValue("graph");
+							URI grp = (URI) b.getValue("graph");
 							schema.add(subj, pred, obj, grp);
 						}
 					} finally {

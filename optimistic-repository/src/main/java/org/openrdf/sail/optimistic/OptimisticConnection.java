@@ -1105,7 +1105,7 @@ public class OptimisticConnection extends TransactionalSailConnectionWrapper imp
 			union = new StatementPattern(subjVar, predVar, objVar);
 		}
 		for (Resource ctx : contexts) {
-			Var ctxVar = new Var("ctx", ctx);
+			Var ctxVar = new Var("graph", ctx);
 			Scope scope = ctx == null ? DEFAULT_CONTEXTS : NAMED_CONTEXTS;
 			TupleExpr sp = new StatementPattern(scope, subjVar, predVar,
 					objVar, ctxVar);

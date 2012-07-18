@@ -48,7 +48,6 @@ import java.util.regex.Pattern;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
-import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -77,7 +76,6 @@ public class OwlNormalizer {
 	private RDFDataSource ds;
 	private Set<URI> anonymousClasses = new HashSet<URI>();
 	private Map<URI, URI> aliases = new HashMap<URI, URI>();
-	private Map<String, URI> ontologies;
 	private Map<String, String> implNames = new HashMap<String, String>();
 	private Set<String> commonNS = new HashSet<String>(Arrays.asList(
 			RDF.NAMESPACE, RDFS.NAMESPACE, OWL.NAMESPACE));
@@ -111,12 +109,9 @@ public class OwlNormalizer {
 		createJavaAnnotations();
 		checkPropertyDomains();
 		checkPropertyRanges();
-		ontologies = findOntologies();
 		subClassIntersectionOf();
 		hasValueFromList();
 		subClassOneOf();
-		mergeDuplicateRestrictions();
-		markEquivalentRestrictions();
 		distributeEquivalentClasses();
 		renameAnonymousClasses();
 		mergeUnionClasses();
@@ -239,110 +234,6 @@ public class OwlNormalizer {
 				}
 			}
 		}
-	}
-
-	private Map<String, URI> findOntologies() {
-		Map<String, URI> ontologies = new HashMap<String, URI>();
-		assignOrphansToTheirOntology();
-		findNamespacesOfOntologies(ontologies);
-		assignOrphansToNewOntology(ontologies);
-		return ontologies;
-	}
-
-	private void assignOrphansToTheirOntology() {
-		for (Statement st : ds.match(null, RDF.TYPE, null)) {
-			Resource subj = st.getSubject();
-			if (!ds.contains(subj, RDFS.ISDEFINEDBY, null)) {
-				if (st.getContext() == null)
-					continue;
-				for (Resource ont : ds.match(null, RDF.TYPE, OWL.ONTOLOGY,
-						st.getContext()).subjects()) {
-					logger.debug("assigning {} {}", subj, ont);
-					ds.add(subj, RDFS.ISDEFINEDBY, ont);
-				}
-			}
-		}
-	}
-
-	private void findNamespacesOfOntologies(Map<String, URI> ontologies) {
-		for (Resource subj : ds.match(null, RDF.TYPE, OWL.ONTOLOGY).subjects()) {
-			if (subj instanceof BNode)
-				continue;
-			URI ont = (URI) subj;
-			logger.debug("found ontology {}", ont);
-			ontologies.put(ont.toString(), ont);
-			ontologies.put(ont.getNamespace(), ont);
-			ontologies.put(ont.toString() + '#', ont);
-			Set<String> spaces = new HashSet<String>();
-			for (Resource bean : ds.match(null, RDFS.ISDEFINEDBY, ont).subjects()) {
-				if (bean instanceof URI)
-					spaces.add(((URI) bean).getNamespace());
-			}
-			if (spaces.size() > 0) {
-				for (String ns : spaces) {
-					ontologies.put(ns, ont);
-				}
-			} else {
-				ontologies.put(guessNamespace(ont), ont);
-			}
-		}
-	}
-
-	private void assignOrphansToNewOntology(Map<String, URI> ontologies) {
-		for (Resource subj : ds.match(null, RDF.TYPE, null).subjects()) {
-			if (subj instanceof URI && !ds.contains(subj, RDFS.ISDEFINEDBY, null)) {
-				URI uri = (URI) subj;
-				String ns = uri.getNamespace();
-				URI ont = findOntology(ns, ontologies);
-				logger.debug("assigning {} {}", uri, ont);
-				ds.add(uri, RDFS.ISDEFINEDBY, ont);
-			}
-		}
-		loop: for (Statement st : ds.match(null, RDF.TYPE, null)) {
-			Resource subj = st.getSubject();
-			if (!(subj instanceof URI)
-					&& !ds.contains(subj, RDFS.ISDEFINEDBY, null)) {
-				for (Resource peer : ds.match(null, RDF.TYPE, null,
-						st.getContext()).subjects()) {
-					for (Value ont : ds.match(peer, RDFS.ISDEFINEDBY, null)
-							.objects()) {
-						logger.debug("assigning {} {}", subj, ont);
-						ds.add(subj, RDFS.ISDEFINEDBY, ont);
-						continue loop;
-					}
-				}
-			}
-		}
-	}
-
-	private String guessNamespace(URI URI) {
-		String ns = URI.getNamespace();
-		String local = URI.getLocalName();
-		if (local.endsWith("#") || local.endsWith("/")) {
-			return ns + local;
-		}
-		if (ns.endsWith("#")) {
-			return ns;
-		}
-		return ns + local + "#";
-	}
-
-	private URI findOntology(String ns, Map<String, URI> ontologies) {
-		if (ontologies.containsKey(ns)) {
-			return ontologies.get(ns);
-		}
-		for (Map.Entry<String, URI> e : ontologies.entrySet()) {
-			String key = e.getKey();
-			if (key.indexOf('#') > 0
-					&& ns.startsWith(key.substring(0, key.indexOf('#'))))
-				return e.getValue();
-		}
-		URI URI = new URIImpl(ns);
-		if (ns.endsWith("#")) {
-			URI = new URIImpl(ns.substring(0, ns.length() - 1));
-		}
-		ontologies.put(ns, URI);
-		return URI;
 	}
 
 	private void propagateSubClassType(Resource classDef) {
@@ -637,81 +528,6 @@ public class OwlNormalizer {
 		return null;
 	}
 
-	private void mergeDuplicateRestrictions() {
-		Model model = ds.match(null, OWL.ONPROPERTY, null);
-		for (Statement st : model) {
-			Resource r1 = st.getSubject();
-			if (r1 instanceof URI)
-				continue;
-			Value property = st.getObject();
-			for (Resource r2 : model.filter(null, OWL.ONPROPERTY, property).subjects()) {
-				if (r2 instanceof URI)
-					continue;
-				if (r1.stringValue().compareTo(r2.stringValue()) < 0) {
-					if (equivalent(r1, r2, 10)) {
-						rename(r2, r1);
-					}
-				}
-			}
-		}
-	}
-
-	private void markEquivalentRestrictions() {
-		Model model = ds.match(null, OWL.ONPROPERTY, null);
-		for (Statement st : model) {
-			Resource r1 = st.getSubject();
-			Value property = st.getObject();
-			for (Resource r2 : model.filter(null, OWL.ONPROPERTY, property).subjects()) {
-				if (r1.stringValue().compareTo(r2.stringValue()) < 0) {
-					if (equivalent(r1, r2, 10)) {
-						ds.add(r1, OWL.EQUIVALENTCLASS, r2);
-						ds.add(r2, OWL.EQUIVALENTCLASS, r1);
-					}
-				}
-			}
-		}
-	}
-
-	private boolean equivalent(Value v1, Value v2, int depth) {
-		if (depth < 0)
-			return false;
-		if (v1.equals(v2))
-			return true;
-		if (v1 instanceof Literal || v2 instanceof Literal)
-			return false;
-		if (v1 instanceof URI || v2 instanceof URI)
-			return false;
-		Resource r1 = (Resource) v1;
-		Resource r2 = (Resource) v2;
-		if (equivalentObjects(r1, r2, OWL.HASVALUE, depth - 1))
-			return true;
-		if (equivalentObjects(r1, r2, OWL.ALLVALUESFROM, depth - 1))
-			return true;
-		if (equivalentObjects(r1, r2, OWL.SOMEVALUESFROM, depth - 1))
-			return true;
-		return false;
-	}
-
-	private boolean equivalentObjects(Resource r1, Resource r2, URI pred,
-			int depth) {
-		Set<Value> s1 = ds.match(r1, pred, null).objects();
-		Set<Value> s2 = ds.match(r2, pred, null).objects();
-		if (s1.isEmpty() || s2.isEmpty())
-			return false;
-		for (Value v1 : s1) {
-			boolean equivalent = false;
-			for (Value v2 : s2) {
-				if (v1.equals(v2)) {
-					equivalent = true;
-					break;
-				}
-			}
-			if (!equivalent)
-				return false;
-		}
-		return true;
-	}
-
 	private void distributeEquivalentClasses() {
 		for (Statement st : ds.match(null, OWL.EQUIVALENTCLASS, null)) {
 			Resource subj = st.getSubject();
@@ -949,14 +765,9 @@ public class OwlNormalizer {
 	}
 
 	private CharSequence getMatchNamespace(Resource clazz) {
-		for (Value ont : ds.match(clazz, RDFS.ISDEFINEDBY, null).objects()) {
-			if (ont instanceof URI) {
-				return getMatchNamespace((URI) ont);
-			}
-		}
-		for (Value ctx : ds.match(clazz, null, null).contexts()) {
-			if (ctx instanceof URI) {
-				return getMatchNamespace((URI) ctx);
+		for (Resource graph : ds.match(clazz, null, null).contexts()) {
+			if (graph instanceof URI) {
+				return getMatchNamespace(graph);
 			}
 		}
 		// this shouldn't happen, but just in case
@@ -980,6 +791,7 @@ public class OwlNormalizer {
 				sb.append(parsed.getAuthority());
 			}
 			sb.append(parsed.getPath());
+			sb.append("#");
 		}
 		return sb;
 	}
@@ -990,10 +802,6 @@ public class OwlNormalizer {
 		} else {
 			logger.debug("renaming {} {}", orig, dest);
 			ds.add(dest, RDF.TYPE, OWL.CLASS);
-			if (!ds.contains(orig, RDFS.ISDEFINEDBY, null)) {
-				URI ont = findOntology(dest.getNamespace(), ontologies);
-				ds.add(dest, RDFS.ISDEFINEDBY, ont);
-			}
 			anonymousClasses.add(dest);
 		}
 		rename(orig, dest);

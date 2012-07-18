@@ -55,9 +55,15 @@ public class RDFDataSource {
 		return false;
 	}
 
-	public Model match(Value subj, URI pred, Value obj, Resource... contexts) {
+	public Model match(Value subj, URI pred, Value obj) {
 		if (subj == null || subj instanceof Resource)
-			return new LinkedHashModel(model.filter((Resource) subj, pred, obj, contexts));
+			return new LinkedHashModel(model.filter((Resource) subj, pred, obj));
+		return new LinkedHashModel();
+	}
+
+	public Model match(Value subj, URI pred, Value obj, URI graph) {
+		if (subj == null || subj instanceof Resource)
+			return new LinkedHashModel(model.filter((Resource) subj, pred, obj, graph));
 		return new LinkedHashModel();
 	}
 
