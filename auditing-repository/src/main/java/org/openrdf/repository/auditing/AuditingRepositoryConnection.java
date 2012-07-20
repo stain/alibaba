@@ -110,7 +110,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 
 	private final AuditingRepository repository;
 	private final Map<URI, Set<URI>> modifiedGraphs = new HashMap<URI, Set<URI>>();
-	private final Map<URI, Set<URI>> modifiedEntities = new HashMap<URI, Set<URI>>();
+	private final Map<URI, Map<URI, Boolean>> modifiedEntities = new HashMap<URI, Map<URI, Boolean>>();
 	private final URI provUsed;
 	private final URI provWasGeneratedBy;
 	private final URI provWasInformedBy;
@@ -459,27 +459,32 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		URI activityGraph = getInsertContext();
 		if (activityGraph == null)
 			return;
+		RepositoryConnection con = getDelegate();
 		if (uncommittedActivityGraphs.add(activityGraph)) {
 			if (activityFactory != null) {
-				activityFactory.activityStarted(activityGraph, getDelegate());
+				activityFactory.activityStarted(activityGraph, con);
 			}
 		}
 		if (subject instanceof URI && !isActivityEntity(activityGraph, subject)) {
-			Set<URI> entities = modifiedEntities.get(activityGraph);
+			Map<URI, Boolean> entities = modifiedEntities.get(activityGraph);
 			if (entities == null) {
-				modifiedEntities.put(activityGraph, entities = new HashSet<URI>());
+				modifiedEntities.put(activityGraph, entities = new HashMap<URI, Boolean>());
 			}
 			URI entity = entity((URI) subject);
-			if (entities.add(entity)) {
-				if (inserted) {
-					getDelegate().remove(entity, provWasGeneratedBy, null);
-					getDelegate().add(entity, provWasGeneratedBy, activityGraph, activityGraph);
-				}
-				getDelegate().add(activityGraph, provUsed, entity, activityGraph);
-			}
+			Boolean wasInserted = entities.get(entity);
 			if (entities.size() >= MAX_SIZE) {
 				entities.clear();
-				entities.add(entity);
+			}
+			if (inserted && wasInserted != Boolean.TRUE) {
+				entities.put(entity, Boolean.TRUE);
+				con.remove(entity, provWasGeneratedBy, null);
+				con.add(entity, provWasGeneratedBy, activityGraph, activityGraph);
+				if (wasInserted == null) {
+					con.add(activityGraph, provUsed, entity, activityGraph);
+				}
+			} else if (wasInserted == null) {
+				entities.put(entity, inserted ? Boolean.TRUE : Boolean.FALSE);
+				con.add(activityGraph, provUsed, entity, activityGraph);
 			}
 		}
 		if (contexts == null || contexts.length == 0)
@@ -493,7 +498,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		for (Resource ctx : contexts) {
 			if (ctx instanceof URI && !isActivityEntity(activityGraph, ctx)) {
 				if (graphs.add((URI) ctx)) {
-					getDelegate().add(activityGraph, provWasInformedBy, (URI) ctx, activityGraph);
+					con.add(activityGraph, provWasInformedBy, (URI) ctx, activityGraph);
 				}
 				if (graphs.size() >= MAX_SIZE) {
 					graphs.clear();

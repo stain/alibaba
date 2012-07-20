@@ -458,9 +458,9 @@ public class AuditingConnection extends TransactionalSailConnectionWrapper {
 		try {
 			while (stmts.hasNext()) {
 				Statement st = stmts.next();
-				Resource ctx = st.getContext();
-				if (ctx instanceof URI && modified.add(ctx)) {
-					addMetadata(currentTrx, MODIFIED, ctx, currentTrx);
+				Value ctx = st.getObject();
+				if (ctx instanceof URI && modified.add((URI) ctx)) {
+					addMetadata(getTrx(), MODIFIED, ctx, getTrx());
 				}
 				super.removeStatements(s, REVISION, ctx);
 			}

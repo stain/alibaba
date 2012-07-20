@@ -129,6 +129,39 @@ public class AuditingOptimisticTest extends TestCase {
 		assertFalse(con.hasStatement(null, CAHNGED, null, false));
 	}
 
+	public void testAddUncommitted() throws Exception {
+		begin(con);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, GENERATED_BY, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(Arrays.asList(lastActivity), con.getContextIDs().asList());
+		assertTrue(con.hasStatement(null, RDF.TYPE, ACTIVITY, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, OBSOLETE, false));
+		assertFalse(con.hasStatement(null, ENDED_AT, null, false));
+		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
+		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+	}
+
+	public void testSetUncommitted() throws Exception {
+		begin(con);
+		assertTrue(con.isEmpty());
+		con.remove(carmichael, knows, null);
+		con.add(carmichael, knows, harris);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, GENERATED_BY, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(Arrays.asList(lastActivity), con.getContextIDs().asList());
+		assertTrue(con.hasStatement(null, RDF.TYPE, ACTIVITY, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, OBSOLETE, false));
+		assertFalse(con.hasStatement(null, ENDED_AT, null, false));
+		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
+		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+	}
+
 	public void testAddMany() throws Exception {
 		begin(con);
 		assertTrue(con.isEmpty());
