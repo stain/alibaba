@@ -148,13 +148,9 @@ public class ClassFactory extends ClassLoader {
 	 * @return temporary Class template
 	 */
 	public ClassTemplate createClassTemplate(String name, Class<?> class1) {
-		try {
-			ClassPool cp = getClassPool();
-			CtClass cc = cp.makeClass(name, cp.get(class1.getName()));
-			return new ClassTemplate(cc, this);
-		} catch (NotFoundException e) {
-			throw new ObjectCompositionException(e);
-		}
+		ClassPool cp = getClassPool();
+		CtClass cc = cp.makeClass(name, get(class1));
+		return new ClassTemplate(cc, this);
 	}
 
 	@Override
@@ -297,7 +293,7 @@ public class ClassFactory extends ClassLoader {
 		return pool;
 	}
 
-	private Class defineClass(String name, byte[] bytecode) {
+	private Class<?> defineClass(String name, byte[] bytecode) {
 		String resource = name.replace('.', '/') + ".class";
 		saveResource(resource, bytecode);
 		return defineClass(name, bytecode, 0, bytecode.length);

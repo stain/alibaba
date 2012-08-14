@@ -151,8 +151,11 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	@Override
 	public void close() throws RepositoryException {
-		super.close();
-		repository.closed(this);
+		try {
+			super.close();
+		} finally {
+			repository.closed(this);
+		}
 	}
 
 	@Override

@@ -490,10 +490,10 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		CountDownLatch latch = getRecompileLatch(con);
 		if (latch != null) {
 			try {
-				if (unscheduleRecompile(con)) {
+				Boolean doIt = unscheduleRecompile(con);
+				if (doIt != null && doIt) {
 					recompileWithNotification();
-					latch.countDown();
-				} else {
+				} else if (doIt != null) {
 					latch.await();
 				}
 			} catch (InterruptedException e) {
@@ -543,7 +543,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		return null;
 	}
 
-	private boolean unscheduleRecompile(ObjectConnection con) {
+	private Boolean unscheduleRecompile(ObjectConnection con) {
 		if (isCompileRepository()) {
 			synchronized (compileAfter) {
 				if (con == null || compileAfter.remove(con)) {
@@ -554,7 +554,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 				}
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private void recompileWithNotification() throws RepositoryException {
