@@ -191,7 +191,9 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 				try {
 					BindingSet bindings = prepared.getBindings();
 					Dataset dataset = prepared.getDataset();
-					activity(ql, update, baseURI, bindings, dataset);
+					if (dataset != null) {
+						activity(ql, update, baseURI, bindings, dataset);
+					}
 				} catch (MalformedQueryException e) {
 					// ignore
 				} catch (QueryEvaluationException e) {
@@ -244,7 +246,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	@Override
 	protected void addWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
-		activity(true, subject, contexts);
+		activity(getInsertContext(), true, subject, contexts);
 		getDelegate().add(subject, predicate, object, contexts);
 	}
 
@@ -257,14 +259,15 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	protected void removeWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
 		Resource[] defRemove = getReadContexts();
+		URI activityGraph = getInsertContext();
 		if (contexts == null || contexts.length > 0) {
-			activity(false, subject, contexts);
+			activity(activityGraph, false, subject, contexts);
 			getDelegate().remove(subject, predicate, object, contexts);
 		} else if (defRemove == null || defRemove.length > 0) {
-			activity(false, subject, defRemove);
+			activity(activityGraph, false, subject, defRemove);
 			getDelegate().remove(subject, predicate, object, defRemove);
 		} else {
-			activity(false, subject);
+			activity(activityGraph, false, subject);
 			executeDelete(subject, predicate, object);
 		}
 	}
@@ -375,19 +378,21 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 	private void insertActivity(QueryModelNode insertExpr, BindingSet bindings,
 			Dataset dataset) throws QueryEvaluationException,
 			RepositoryException {
+		URI activityGraph = dataset.getDefaultInsertGraph();
 		for (URI entity : findEntity(insertExpr, bindings)) {
-			activity(true, entity);
+			activity(activityGraph, true, entity);
 		}
-		activity(true, null, findGraphs(insertExpr, bindings, dataset));
+		activity(activityGraph, true, null, findGraphs(insertExpr, bindings, dataset));
 	}
 
 	private void deleteActivity(QueryModelNode deleteExpr, BindingSet bindings,
 			Dataset dataset) throws QueryEvaluationException,
 			RepositoryException {
+		URI activityGraph = dataset.getDefaultInsertGraph();
 		for (URI entity : findEntity(deleteExpr, bindings)) {
-			activity(false, entity);
+			activity(activityGraph, false, entity);
 		}
-		activity(false, null, findGraphs(deleteExpr, bindings, dataset));
+		activity(activityGraph, false, null, findGraphs(deleteExpr, bindings, dataset));
 	}
 
 	private boolean isInsertOperation(UpdateExpr expr) {
@@ -455,8 +460,7 @@ public class AuditingRepositoryConnection extends ContextAwareConnection {
 		return entity;
 	}
 
-	private synchronized void activity(boolean inserted, Resource subject, Resource... contexts) throws RepositoryException {
-		URI activityGraph = getInsertContext();
+	private synchronized void activity(URI activityGraph, boolean inserted, Resource subject, Resource... contexts) throws RepositoryException {
 		if (activityGraph == null)
 			return;
 		RepositoryConnection con = getDelegate();
