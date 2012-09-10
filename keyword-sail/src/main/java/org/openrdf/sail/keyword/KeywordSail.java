@@ -275,6 +275,7 @@ public class KeywordSail extends SailWrapper {
 		} else {
 			properties.setProperty("graph", graph.stringValue());
 		}
+		dir.mkdirs();
 		File file = new File(dir, SETTING_PROPERTIES);
 		FileOutputStream out = new FileOutputStream(file);
 		try {
