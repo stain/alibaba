@@ -229,7 +229,6 @@ public class AuditingRepository extends ContextAwareRepository {
 			} else {
 				nextPurge = System.currentTimeMillis();
 			}
-			cleanup();
 		} catch (MalformedQueryException e) {
 			throw new RepositoryException(e);
 		} catch (QueryEvaluationException e) {
@@ -237,6 +236,7 @@ public class AuditingRepository extends ContextAwareRepository {
 		} finally {
 			con.close();
 		}
+		cleanup();
 	}
 
 	@Override

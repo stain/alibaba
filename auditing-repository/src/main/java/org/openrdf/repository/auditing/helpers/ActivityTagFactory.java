@@ -23,15 +23,29 @@ public class ActivityTagFactory implements ActivityFactory {
 	private GregorianCalendar date;
 
 	public ActivityTagFactory() {
-		String username = System.getProperty("user.name");
-		String hostName = "localhost";
+		String userinfo = System.getProperty("user.name");
+		if (userinfo != null) {
+			userinfo = userinfo.replaceAll("^[^a-zA-Z0-9.-]+", "");
+			userinfo = userinfo.replaceAll("[^a-zA-Z0-9.-]+$", "");
+			userinfo = userinfo.replaceAll("[^a-zA-Z0-9.-]", "_");
+		}
+		if (userinfo == null || userinfo.length() == 0) {
+			userinfo = "";
+		} else {
+			userinfo = userinfo + "@";
+		}
+		String authority = "localhost";
 		try {
 			InetAddress localMachine = InetAddress.getLocalHost();
-			hostName = localMachine.getHostName();
+			authority = localMachine.getHostName();
+			authority = authority.replaceAll("^[^a-zA-Z0-9.-]+", "");
+			authority = authority.replaceAll("[^a-zA-Z0-9.-]+$", "");
+			authority = authority.replaceAll("[^a-zA-Z0-9.-]", "_");
+			authority = authority.toLowerCase();
 		} catch (UnknownHostException e) {
 			// ignore
 		}
-		space = "tag:" + username + "@" + hostName + ",";
+		space = "tag:" + userinfo + authority + ",";
 	}
 
 	public URI createActivityURI(ValueFactory vf) {

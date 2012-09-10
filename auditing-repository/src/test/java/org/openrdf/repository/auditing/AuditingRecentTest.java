@@ -145,6 +145,7 @@ public class AuditingRecentTest extends TestCase {
 		assertFalse(con.hasStatement(null, ENDED_AT, null, false));
 		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
 		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+		con = commit(repo, con);
 	}
 
 	public void testSetUncommitted() throws Exception {
@@ -162,6 +163,7 @@ public class AuditingRecentTest extends TestCase {
 		assertFalse(con.hasStatement(null, ENDED_AT, null, false));
 		assertFalse(con.hasStatement(null, INFORMED_BY, null, false));
 		assertFalse(con.hasStatement(null, CAHNGED, null, false));
+		con = commit(repo, con);
 	}
 
 	public void testAddMany() throws Exception {
