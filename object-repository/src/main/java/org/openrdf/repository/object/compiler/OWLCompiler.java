@@ -634,7 +634,7 @@ public class OWLCompiler {
 		return resolver;
 	}
 
-	private String packageName(String pkgName) {
+	String packageName(String pkgName) {
 		if (!Character.isLetter(pkgName.charAt(0))) {
 			pkgName = "_" + pkgName;
 		}
