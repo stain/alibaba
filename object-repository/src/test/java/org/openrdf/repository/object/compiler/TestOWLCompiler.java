@@ -42,18 +42,30 @@ public class TestOWLCompiler extends TestCase {
 		// 
 		// Thus our JAR would not be unzippable on Windows
 		
-		assertEquals("_con", owlCompiler.packageName("con"));
+		assertEquals("_con", owlCompiler.packageName("con"));		
 		assertEquals("_lpt1", owlCompiler.packageName("lpt1"));
+
 		
+
+		// But not replaced if not surrounded by .
+		assertEquals("conx", owlCompiler.packageName("conx"));
+		assertEquals("xcon", owlCompiler.packageName("xcon"));
+		
+		// Case insensitive
+		assertEquals("_CoM2", owlCompiler.packageName("CoM2"));
+		
+		// Also if there's a prefix
 		assertEquals("fred._con", owlCompiler.packageName("fred.con"));
 		assertEquals("fred._lpt1", owlCompiler.packageName("fred.lpt1"));
 		
-		
-		// TODO: Should user supplied package name also be sanitized? 
-		// Perhaps not..
-		assertEquals("con.fred", owlCompiler.packageName("con.fred"));
-		assertEquals("lpt1.soup", owlCompiler.packageName("lpt1.soup"));
-		
+		// or anywhere earlier
+		assertEquals("_con.fred", owlCompiler.packageName("con.fred"));
+		assertEquals("_lpt1.soup", owlCompiler.packageName("lpt1.soup"));		
+		assertEquals("fred._lpt1.soup", owlCompiler.packageName("fred.lpt1.soup"));
+
+		// This is silly, I know, but the $ could screw up the regex 
+		assertEquals("a._clock$.b", owlCompiler.packageName("a.clock$.b"));
+
 		
 	}
 	
