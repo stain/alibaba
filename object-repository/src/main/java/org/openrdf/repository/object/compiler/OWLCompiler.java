@@ -43,6 +43,7 @@ import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,6 +53,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.regex.Pattern;
 
 import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
@@ -61,6 +63,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.query.algebra.Regex;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
@@ -634,11 +637,47 @@ public class OWLCompiler {
 		return resolver;
 	}
 
+	/**
+	 * Former MS-DOS device names like LPT1 and CON are invalid paths on
+	 * windows.
+	 * <p>
+	 * <a href="http://msdn.microsoft.com/en-us/library/aa561308.aspx">Reserved
+	 * names</a>
+	 * <p>
+	 * These string will be used as part of a regular expression within
+	 * {@link #packageName(String)}, hence "CLOCK\\$" is escaped.
+	 * 
+	 * 
+	 * */
+	private static List<String> packageNameInvalidPattern = 
+			Arrays.asList("CON", "PRN", "AUX", "CLOCK\\$", "NUL", "COM1", "COM2",
+					"COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+					"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
+					"LPT8", "LPT9");
+
+	/**
+	 * Ensures package name is valid by prefixing non-alphabetic leading
+	 * characters and Windows device names with <code>_</code>.
+	 * <p>
+	 * Such escapes are done for each part of the package name, separated by
+	 * <code>.</code>.
+	 * <p>
+	 * This method does not do deeper sanitizing, like escaping space or control
+	 * characters.
+	 * 
+	 * @param pkgName A possibly invalid Java package name
+	 * @return A (hopefully) valid Java package name
+	 */
 	String packageName(String pkgName) {
-		if (!Character.isLetter(pkgName.charAt(0))) {
-			pkgName = "_" + pkgName;
+		pkgName = pkgName.replaceAll("(^|\\.)([^a-zA-Z])", "$1_$2");
+		for (String invalid : packageNameInvalidPattern) {
+			// TODO: If performance increase is needed, 
+			// move patterns to a cached Map
+			Pattern regEx = Pattern.compile("(^|\\.)(" + invalid + ")($|\\.)", 
+					Pattern.CASE_INSENSITIVE);
+			pkgName = regEx.matcher(pkgName).replaceAll("$1_$2$3");
 		}
-		return pkgName.replaceAll("\\.([^a-zA-Z])", "._$1");
+		return pkgName;
 	}
 
 	private JavaNameResolver createJavaNameResolver(
