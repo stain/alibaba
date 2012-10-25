@@ -31,5 +31,32 @@ public class TestOWLCompiler extends TestCase {
 		assertEquals("f.__red", owlCompiler.packageName("f._red"));
 	}
 	
+	/**
+	 * Test for http://www.openrdf.org/issues/browse/ALI-18
+	 */
+	public void testInvalidWindowsPackageNames() throws Exception {
+		
+		// Remember that old COPY CON FILE
+		// .. well, those device names are still invalid on Windows
+		// http://msdn.microsoft.com/en-us/library/aa561308.aspx
+		// 
+		// Thus our JAR would not be unzippable on Windows
+		
+		assertEquals("_con", owlCompiler.packageName("con"));
+		assertEquals("_lpt1", owlCompiler.packageName("lpt1"));
+		
+		assertEquals("fred._con", owlCompiler.packageName("fred.con"));
+		assertEquals("fred._lpt1", owlCompiler.packageName("fred.lpt1"));
+		
+		
+		// TODO: Should user supplied package name also be sanitized? 
+		// Perhaps not..
+		assertEquals("con.fred", owlCompiler.packageName("con.fred"));
+		assertEquals("lpt1.soup", owlCompiler.packageName("lpt1.soup"));
+		
+		
+	}
+	
 	// TODO: Test actual OWL compilation
 }
+
